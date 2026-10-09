@@ -1,8 +1,51 @@
 # ================================================================
-# FILE:        .gitignore
-# BƯỚC:        3/28
-# MỤC ĐÍCH:    Loại trừ .env, kms_keys/, pgdata/, __pycache__ khỏi Git
-# PHỤ THUỘC:   Không có
+# FILE:        .dockerignore
+# BƯỚC:        3b/28
+# MỤC ĐÍCH:    Loại file rác + nhạy cảm khỏi Docker build context
+#              (giảm thời gian build + tránh lộ secret vào image)
+# PHỤ THUỘC:   Không
 # BƯỚC TIẾP:   Bước 04: Dockerfile
 # ================================================================
 
+# 🔒 Bảo mật: KHÔNG copy vào image
+.env
+.env.*
+!.env.example
+kms_keys/
+*.pem
+*.key
+
+# Database data
+pgdata/
+
+# Git
+.git/
+.gitignore
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs & tests (không cần trong image)
+docs/
+tests/
+*.md
+!README.md
+
+# Docker
+Dockerfile
+docker-compose*.yml

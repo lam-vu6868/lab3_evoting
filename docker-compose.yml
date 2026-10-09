@@ -1,8 +1,60 @@
 # ================================================================
 # FILE:        docker-compose.yml
 # BƯỚC:        6/28
-# MỤC ĐÍCH:    Chạy 2 container: PostgreSQL 16 + FastAPI app
-# PHỤ THUỘC:   Dockerfile (bước 04), db/init.sql (bước 05)
+# MỤC ĐÍCH:    Chạy PostgreSQL 16 + FastAPI app (cấu hình kiểu "production")
+# PHỤ THUỘC:   Dockerfile (04), db/01_roles.sh + db/init.sql (05), .env (02)
 # BƯỚC TIẾP:   Bước 07: app/__init__.py
+# GHI CHÚ:     - Postgres KHÔNG publish port ra host (Least Privilege:
+#                developer không chạm DB trực tiếp).
+#              - Không mount source, không --reload.
+#              - Muốn dev (hot-reload + port DB localhost):
+#                docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 # ================================================================
 
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: evoting_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evoting
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ROOT_PASSWORD}
+      # Truyền cho db/01_roles.sh để tạo role -> KHÔNG hard-code password trong SQL
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD}
+      ADMIN_USER_PASSWORD: ${ADMIN_USER_PASSWORD}
+      TALLY_USER_PASSWORD: ${TALLY_USER_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data # named volume: không dính lỗi quyền trên host
+      - ./db:/docker-entrypoint-initdb.d:ro # chạy theo thứ tự tên: 01_roles.sh -> init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d evoting"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: evoting_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgresql://app_user:${APP_USER_PASSWORD}@postgres:5432/evoting
+      ADMIN_DATABASE_URL: postgresql://admin_app:${ADMIN_USER_PASSWORD}@postgres:5432/evoting
+      TALLY_DATABASE_URL: postgresql://tally_user:${TALLY_USER_PASSWORD}@postgres:5432/evoting
+      KMS_KEY_DIR: /app/kms_keys
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ELECTION_START: ${ELECTION_START}
+      ELECTION_END: ${ELECTION_END}
+    volumes:
+      - kms_keys:/app/kms_keys # named volume: không nằm trong thư mục project
+
+volumes:
+  pgdata:
+  kms_keys:
