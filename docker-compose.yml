@@ -1,0 +1,8 @@
+# ================================================================
+# FILE:        docker-compose.yml
+# BƯỚC:        6/28
+# MỤC ĐÍCH:    Chạy 2 container: PostgreSQL 16 + FastAPI app
+# PHỤ THUỘC:   Dockerfile (bước 04), db/init.sql (bước 05)
+# BƯỚC TIẾP:   Bước 07: app/__init__.py
+# ================================================================
+
