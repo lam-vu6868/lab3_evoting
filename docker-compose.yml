@@ -3,7 +3,7 @@
 # CÁCH DÙNG / VIỆC CẦN LÀM:
 # 1. Chạy docker compose up -d; dùng image postgres:16-alpine có sẵn, không cần build.
 # 2. pgdata giữ dữ liệu; db/ mount read-only để init khi volume mới.
-# 3. Máy local kết nối 127.0.0.1:5432, database evoting; password lấy từ .env.
+# 3. Máy local kết nối 127.0.0.1:5433, database evoting; password lấy từ .env.
 # 4. Backend/frontend sẽ chạy local sau khi được viết; không có bước build ứng dụng.
 # ĐỌC KÈM: docs/STRUCTURE.md
 

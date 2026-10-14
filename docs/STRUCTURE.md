@@ -53,8 +53,9 @@ HeThongBauCu/
 ├── db/
 │   ├── 01_roles.sh             Đã có script tạo 3 role từ biến môi trường
 │   └── init.sql                Đã có bảng, constraint, mẫu ứng viên, quyền
-├── tests/                      Khung, chưa có test nghiệp vụ thực thi
+├── tests/                      Test chặng 1 đã có; test nghiệp vụ còn là khung
 │   ├── __init__.py             MỚI: package tests
+│   ├── test_database_setup.py  Đã có 5 kiểm tra chặng 1 trên PostgreSQL
 │   ├── test_crypto.py          Mật mã/password/JWT, không cần DB
 │   ├── test_attack.py          API và quyền DB trên môi trường test
 │   └── test_voting.py          MỚI: rollback, bầu đồng thời, quyền INSERT
@@ -70,7 +71,7 @@ HeThongBauCu/
 ├── .env.example                Mẫu cấu hình, có ELECTION_ID
 ├── .gitignore                  Quy tắc riêng cho Git
 ├── .gitattributes              Giữ LF cho script shell chạy trong container
-├── docker-compose.yml          Chỉ PostgreSQL, localhost:5432, volume pgdata
+├── docker-compose.yml          Chỉ PostgreSQL, localhost:5433, volume pgdata
 ├── requirements.txt            Dependency hiện có, chưa nâng phiên bản
 ├── README.md                   Trạng thái dự án và điểm bắt đầu
 └── ROADMAP.md                  Thứ tự thực hành và kiểm tra từng chặng
@@ -228,5 +229,5 @@ python -m unittest tests.test_crypto
 
 Docker hiện chỉ chạy PostgreSQL; dùng `docker compose up -d`, không build/mount app hoặc static.
 Sau khi viết backend, chạy `uvicorn app.main:app --reload` trên máy local.
-DB URL dùng 127.0.0.1:5432/evoting; KMS_KEY_DIR dùng ./kms_keys, không có volume KMS trong Compose hiện tại.
+DB URL dùng 127.0.0.1:5433/evoting; KMS_KEY_DIR dùng ./kms_keys, không có volume KMS trong Compose hiện tại.
 Không giữ các file wrapper ở đường dẫn cũ để tránh hai nơi có cùng chức năng.

@@ -4,8 +4,8 @@
 # CÁCH DÙNG / VIỆC CẦN LÀM:
 # 1. PostgreSQL entrypoint gọi script; nhận password qua biến môi trường Docker.
 # 2. Tạo role và USAGE schema, không tạo bảng ở đây.
-# 3. Trước dùng thật, thay nội suy password trực tiếp trong SQL bằng cơ chế quote literal
-#    an toàn của psql; kiểm tra password có dấu nháy không làm hỏng câu lệnh.
+# 3. psql đọc password từ env bằng \getenv; :'variable' và format %L quote SQL literal.
+#    Heredoc có dấu nháy để shell không thay biến bên trong SQL; không truyền secret qua argv.
 # 4. Không echo password; chạy lại không âm thầm thay password role cũ; file dùng LF.
 # ĐỌC KÈM: docs/STRUCTURE.md
 
@@ -19,53 +19,27 @@ if [ -z "$APP_USER_PASSWORD" ] || [ -z "$ADMIN_USER_PASSWORD" ] || [ -z "$TALLY_
     exit 1
 fi
 
-# ---------- Tạo role app_user ----------
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    DO \$\$
-    BEGIN
-        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'app_user') THEN
-            CREATE ROLE app_user LOGIN PASSWORD '${APP_USER_PASSWORD}';
-            RAISE NOTICE 'Created role: app_user';
-        ELSE
-            RAISE NOTICE 'Role app_user đã tồn tại, bỏ qua';
-        END IF;
-    END
-    \$\$;
-EOSQL
+# ---------- Đọc secret trong psql, tạo role còn thiếu và cấp USAGE ----------
+# \gexec thực thi các câu CREATE ROLE do SELECT tạo ra; không trả câu SQL ra console.
+# Role đã tồn tại không được đổi password khi chạy lại.
+psql -X -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
+\getenv app_password APP_USER_PASSWORD
+\getenv admin_password ADMIN_USER_PASSWORD
+\getenv tally_password TALLY_USER_PASSWORD
 
-# ---------- Tạo role admin_app ----------
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    DO \$\$
-    BEGIN
-        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'admin_app') THEN
-            CREATE ROLE admin_app LOGIN PASSWORD '${ADMIN_USER_PASSWORD}';
-            RAISE NOTICE 'Created role: admin_app';
-        ELSE
-            RAISE NOTICE 'Role admin_app đã tồn tại, bỏ qua';
-        END IF;
-    END
-    \$\$;
-EOSQL
+SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', 'app_user', :'app_password')
+WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'app_user')
+\gexec
 
-# ---------- Tạo role tally_user ----------
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    DO \$\$
-    BEGIN
-        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'tally_user') THEN
-            CREATE ROLE tally_user LOGIN PASSWORD '${TALLY_USER_PASSWORD}';
-            RAISE NOTICE 'Created role: tally_user';
-        ELSE
-            RAISE NOTICE 'Role tally_user đã tồn tại, bỏ qua';
-        END IF;
-    END
-    \$\$;
-EOSQL
+SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', 'admin_app', :'admin_password')
+WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'admin_app')
+\gexec
 
-# ---------- Cấp USAGE trên schema public ----------
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    GRANT USAGE ON SCHEMA public TO app_user;
-    GRANT USAGE ON SCHEMA public TO admin_app;
-    GRANT USAGE ON SCHEMA public TO tally_user;
+SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', 'tally_user', :'tally_password')
+WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'tally_user')
+\gexec
+
+GRANT USAGE ON SCHEMA public TO app_user, admin_app, tally_user;
 EOSQL
 
 echo "✅ [01_roles.sh] Đã tạo xong 3 role + cấp USAGE schema"

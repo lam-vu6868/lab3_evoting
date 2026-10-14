@@ -9,7 +9,8 @@ Không ghi tính năng đã hoàn thành khi mới có comment hoặc kế hoạ
 # Hệ thống bầu cử điện tử — khung triển khai
 
 Dự án đang ở giai đoạn chuẩn bị code. SQL tạo bảng/quyền, Docker và script xuất Word đã có nội dung;
-backend, giao diện và test nghiệp vụ hiện là các file có hướng dẫn, chưa phải ứng dụng chạy hoàn chỉnh.
+backend, giao diện và test nghiệp vụ bầu cử hiện là các file có hướng dẫn, chưa phải ứng dụng chạy hoàn chỉnh.
+Chặng 1 đã kiểm tra thực tế: PostgreSQL healthy tại 127.0.0.1:5433; 5 kiểm tra khởi tạo/quyền DB đạt.
 
 ## Bắt đầu tại đây
 
@@ -47,6 +48,9 @@ docker compose up -d
 docker compose ps
 docker compose logs postgres
 
+# Kiểm tra chặng 1: bảng, role, đăng nhập và phân quyền
+python -m unittest tests.test_database_setup -v
+
 # Mở psql trong container để xem bảng
 docker compose exec postgres psql -U postgres -d evoting -c "\dt"
 
@@ -59,7 +63,7 @@ Kết nối từ DBeaver/pgAdmin hoặc backend chạy trên máy:
 | Trường | Giá trị |
 | --- | --- |
 | Host | 127.0.0.1 |
-| Port | 5432 |
+| Port | 5433 |
 | Database | evoting |
 | User để học/quản trị DB | postgres |
 | Password | Giá trị POSTGRES_ROOT_PASSWORD trong .env |

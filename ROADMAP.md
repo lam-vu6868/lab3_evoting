@@ -18,11 +18,18 @@ Hiện chỉ chạy PostgreSQL: `docker compose up -d`, dùng image có sẵn, k
 
 - Hiểu 5 bảng và quyền của 3 role, chưa cần code web.
 - Giữ .env thật riêng; thêm ELECTION_ID nếu cần, phải ổn định suốt cuộc bầu cử.
-- Rà lại quote password trong 01_roles.sh trước dùng password có ký tự đặc biệt.
+- 01_roles.sh dùng psql \getenv, quote literal và format %L để nhận password có ký tự đặc biệt.
 - PostgreSQL init chỉ áp dụng cho volume mới; dùng môi trường test riêng cho thử nghiệm phá dữ liệu.
 
-Checkpoint: DB lên tại 127.0.0.1:5432, bảng/role đúng, admin_app không đọc được votes.
+Checkpoint: DB lên tại 127.0.0.1:5433, bảng/role đúng, admin_app không đọc được votes.
 Backend/frontend không nằm trong Compose; các chặng sau chạy Python local khi đã viết code.
+
+**Đã hoàn thành checkpoint chặng 1:** PostgreSQL healthy trên cổng 5433; đủ 5 bảng,
+3 ứng viên mẫu và 3 role không có quyền superuser/tạo DB/tạo role.
+Ba role đăng nhập được; app_user/admin_app không SELECT votes; tally_user đọc được và không sửa phiếu.
+5 kiểm tra trong `tests/test_database_setup.py` đã chạy đạt, gồm quote password có dấu nháy/backslash.
+Chạy lại bằng `python -m unittest tests.test_database_setup -v` khi Docker đang chạy.
+Các chặng 2–8 chưa triển khai.
 
 ## Chặng 2 — Cấu hình và kết nối DB
 
