@@ -1,11 +1,12 @@
--- ================================================================
--- FILE:        db/init.sql
--- BƯỚC:        5/28
--- MỤC ĐÍCH:    Tạo bảng + ràng buộc + GRANT (Least Privilege)
--- PHỤ THUỘC:   db/01_roles.sh (tạo 3 role, password lấy từ .env) — chạy TRƯỚC file này
--- BƯỚC TIẾP:   Bước 06: docker-compose.yml
--- LƯU Ý:       File KHÔNG tạo role và KHÔNG chứa password nào.
--- ================================================================
+-- FILE: db/init.sql
+-- MỤC ĐÍCH: Nguồn chuẩn tạo 5 bảng, dữ liệu ứng viên và GRANT; đã có SQL.
+-- CÁCH DÙNG / VIỆC CẦN LÀM:
+-- 1. Đọc lần lượt voters, candidates, votes, voter_status, used_nonces rồi phần GRANT.
+-- 2. Giữ votes không có voter_id/timestamp; voter_status không có candidate_id.
+-- 3. SQL chỉ chạy tự động khi volume PostgreSQL mới; sửa file không tự đổi DB đang có.
+-- 4. Nếu đổi schema sau này phải viết migration; không xóa volume có dữ liệu thật.
+-- 5. 01_roles.sh phải chạy trước. App tự tạo UUID, INSERT inline không RETURNING.
+-- ĐỌC KÈM: docs/STRUCTURE.md
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -83,7 +84,7 @@ INSERT INTO candidates (name, party) VALUES
     ('Nguyễn Văn A', 'Đảng X'),
     ('Trần Thị B',   'Đảng Y'),
     ('Lê Văn C',     'Đảng Z');
--- Cử tri được seed bằng app/seed_voters.py (sinh mã kích hoạt, lưu hash).
+-- Cử tri được seed bằng app/database/seed_voters.py (sinh mã kích hoạt, lưu hash).
 
 -- ============================================================
 -- PHẦN 3: GRANT (Least Privilege)

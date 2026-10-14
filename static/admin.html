@@ -1,10 +1,17 @@
 <!--
-================================================================
-FILE:        static/admin.html
-BƯỚC:        22/28
-MỤC ĐÍCH:    Trang Admin — xem tổng số phiếu mỗi đại biểu (không xem được từng lá)
-PHỤ THUỘC:   app/main.py (bước 18)
-BƯỚC TIẾP:   Bước 23: tests/test_crypto.py
-================================================================
--->
+FILE: static/admin.html
+TRẠNG THÁI: KHUNG HƯỚNG DẪN — chưa có xử lý nghiệp vụ.
+MỤC ĐÍCH: Admin đăng nhập và xem tổng phiếu; không xem từng phiếu hoặc khóa.
+PHỤ THUỘC: POST /admin/login; GET /results.
 
+CÁCH TRIỂN KHAI THEO THỨ TỰ:
+1. Form username/password; login lấy token role admin, lưu sessionStorage riêng với cử tri.
+2. Dùng token gọi /results; trước kết thúc hiển thị thông báo 403.
+3. Render results[{candidate_id,name,votes}] và total_votes; không tự giải mã hay tự cộng ciphertext.
+4. Nếu kiểm phiếu lỗi, hiện lỗi; không biến lỗi thành tổng 0. Logout xóa admin token.
+
+TỰ KIỂM TRA:
+Token cử tri bị chặn; số 0 hợp lệ khác lỗi server; không có nút/API tải private key.
+
+ĐỌC KÈM: docs/STRUCTURE.md và ROADMAP.md.
+-->

@@ -1,13 +1,13 @@
 #!/bin/bash
-# ================================================================
-# FILE:        db/01_roles.sh
-# BƯỚC:        5a/28
-# MỤC ĐÍCH:    Tạo 3 role DB (app_user, admin_app, tally_user)
-#              Password lấy từ biến môi trường → KHÔNG hard-code.
-# PHỤ THUỘC:   Biến env APP_USER_PASSWORD, ADMIN_USER_PASSWORD,
-#              TALLY_USER_PASSWORD từ docker-compose.yml
-# BƯỚC TIẾP:   db/init.sql (chạy sau, tạo bảng + GRANT)
-# ================================================================
+# FILE: db/01_roles.sh
+# MỤC ĐÍCH: Tạo app_user, admin_app, tally_user trước init.sql; đã có script.
+# CÁCH DÙNG / VIỆC CẦN LÀM:
+# 1. PostgreSQL entrypoint gọi script; nhận password qua biến môi trường Docker.
+# 2. Tạo role và USAGE schema, không tạo bảng ở đây.
+# 3. Trước dùng thật, thay nội suy password trực tiếp trong SQL bằng cơ chế quote literal
+#    an toàn của psql; kiểm tra password có dấu nháy không làm hỏng câu lệnh.
+# 4. Không echo password; chạy lại không âm thầm thay password role cũ; file dùng LF.
+# ĐỌC KÈM: docs/STRUCTURE.md
 
 set -e  # Dừng ngay nếu có lệnh lỗi
 

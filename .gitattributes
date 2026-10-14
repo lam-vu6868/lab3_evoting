@@ -1,0 +1,5 @@
+# FILE: .gitattributes
+# MỤC ĐÍCH: Giữ script shell có xuống dòng LF khi checkout trên Windows.
+# CÁCH DÙNG: Git tự áp dụng cho *.sh; tránh lỗi bash trong container Linux.
+# Không chạy git renormalize hàng loạt; file hiện có đã được ghi bằng LF.
+*.sh text eol=lf

@@ -1,10 +1,21 @@
 <!--
-================================================================
-FILE:        static/vote.html
-BƯỚC:        21/28
-MỤC ĐÍCH:    Trang bỏ phiếu — chọn đại biểu, ký bằng private key, gửi lên server, hiện receipt
-PHỤ THUỘC:   app/main.py (bước 18)
-BƯỚC TIẾP:   Bước 22: static/admin.html
-================================================================
--->
+FILE: static/vote.html
+TRẠNG THÁI: KHUNG HƯỚNG DẪN — chưa có xử lý nghiệp vụ.
+MỤC ĐÍCH: Hiển thị ứng viên, tạo hai chữ ký và gửi một yêu cầu bỏ phiếu.
+PHỤ THUỘC: js/crypto.js; GET /candidates; POST /vote; sessionStorage từ login.
 
+CÁCH TRIỂN KHAI THEO THỨ TỰ:
+1. Kiểm tra token/voter_id/election_id; thiếu thì về login. Tải candidates và hiển thị bằng textContent.
+2. Lấy private key đúng voter_id; cho import backup, không tự tạo khóa mới nếu thiếu.
+3. Khi bấm: nonce=16 byte crypto.getRandomValues rồi hex thường; ts=Math.floor(Date.now()/1000).
+4. Dựng ballot={candidate_id,nonce,ts}, cast={election_id,voter_id,nonce,ts}; ký cả hai.
+5. POST /vote với Bearer token và {ballot,sig_ballot,sig_cast}; chữ ký Base64.
+6. Khóa nút trong lúc chờ để tránh click lặp; backend vẫn phải tự chống đồng thời.
+7. Thành công hiện receipt; lỗi mạng không tuyên bố chắc chắn phiếu chưa được ghi.
+8. Không băm vote_id, không gửi private key và không tự mã hóa AES ở frontend của thiết kế này.
+
+TỰ KIỂM TRA:
+Bytes JSON ký khớp Python; nonce mới mỗi thao tác; nhận 401 về login; bầu lại hiện thông báo rõ.
+
+ĐỌC KÈM: docs/STRUCTURE.md và ROADMAP.md.
+-->

@@ -1,12 +1,12 @@
-# ================================================================
-# FILE:        requirements.txt
-# BƯỚC:        1/28
-# MỤC ĐÍCH:    Khai báo danh sách thư viện Python cần cài
-# PHỤ THUỘC:   Không có
-# BƯỚC TIẾP:   Bước 02: .env.example
-# ================================================================
+# FILE: requirements.txt
+# MỤC ĐÍCH: Danh sách dependency Python đang ghim; chưa được nâng phiên bản trong lần sắp xếp này.
+# CÁCH DÙNG / VIỆC CẦN LÀM:
+# 1. Cài bằng python -m pip install -r requirements.txt trong venv.
+# 2. PBKDF2 dùng cryptography hiện có; test dự kiến dùng unittest stdlib.
+# 3. Trước triển khai thật, rà soát bảo mật/tương thích các phiên bản đang ghim và cập nhật có kiểm thử.
+# 4. Không coi file dependency là bằng chứng hệ thống đã chạy được.
+# ĐỌC KÈM: docs/STRUCTURE.md
 
-# --- Web framework ---
 fastapi==0.110.0
 uvicorn[standard]==0.29.0
 

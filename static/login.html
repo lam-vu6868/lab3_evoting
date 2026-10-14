@@ -1,10 +1,18 @@
 <!--
-================================================================
-FILE:        static/login.html
-BƯỚC:        20/28
-MỤC ĐÍCH:    Trang đăng nhập cử tri — form nhập voter_id/password, lưu JWT vào localStorage
-PHỤ THUỘC:   app/main.py (bước 18)
-BƯỚC TIẾP:   Bước 21: static/vote.html
-================================================================
--->
+FILE: static/login.html
+TRẠNG THÁI: KHUNG HƯỚNG DẪN — chưa có xử lý nghiệp vụ.
+MỤC ĐÍCH: Đăng nhập cử tri và giữ token để bỏ phiếu.
+PHỤ THUỘC: POST /login; vote.html; khóa đã lưu từ register.html.
 
+CÁCH TRIỂN KHAI THEO THỨ TỰ:
+1. Form voter_id/password, fetch JSON POST /login.
+2. Thành công giữ access_token, voter_id, election_id trong sessionStorage rồi chuyển vote.html.
+3. Không lưu mật khẩu. Không sinh lại RSA khi đăng nhập.
+4. Báo lỗi tài khoản chung; nếu thiếu private key, hướng dẫn import backup ở trang bỏ phiếu.
+5. Voter token dùng key lưu trữ khác admin token; đăng xuất chỉ xóa token phiên, không xóa khóa.
+
+TỰ KIỂM TRA:
+Sai mật khẩu không chuyển trang; không còn password trong storage; đăng nhập lại không đổi private key.
+
+ĐỌC KÈM: docs/STRUCTURE.md và ROADMAP.md.
+-->

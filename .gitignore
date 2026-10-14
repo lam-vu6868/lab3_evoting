@@ -1,51 +1,26 @@
-# ================================================================
-# FILE:        .dockerignore
-# BƯỚC:        3b/28
-# MỤC ĐÍCH:    Loại file rác + nhạy cảm khỏi Docker build context
-#              (giảm thời gian build + tránh lộ secret vào image)
-# PHỤ THUỘC:   Không
-# BƯỚC TIẾP:   Bước 04: Dockerfile
-# ================================================================
-
-# 🔒 Bảo mật: KHÔNG copy vào image
+# FILE: .gitignore
+# MỤC ĐÍCH: Chặn secret, môi trường cài đặt và file sinh tự động khỏi Git.
+# CÁCH DÙNG: Git tự đọc; git check-ignore kiểm tra đường dẫn bị bỏ qua.
+# Giữ docs/, tests/, *.md trong Git. File đã tracked không tự bị untrack.
 .env
 .env.*
 !.env.example
 kms_keys/
+pgdata/
 *.pem
 *.key
-
-# Database data
-pgdata/
-
-# Git
-.git/
-.gitignore
-
-# Python cache
+venv/
+.venv/
+env/
 __pycache__/
 *.py[cod]
 *.egg-info/
-.venv/
-venv/
-env/
 .pytest_cache/
-
-# IDE
-.vscode/
+.coverage
+htmlcov/
 .idea/
+.vscode/
 *.swp
-
-# OS
+~$*.docx
 .DS_Store
 Thumbs.db
-
-# Docs & tests (không cần trong image)
-docs/
-tests/
-*.md
-!README.md
-
-# Docker
-Dockerfile
-docker-compose*.yml
