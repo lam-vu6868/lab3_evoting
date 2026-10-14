@@ -6,7 +6,7 @@ PHỤ THUỘC: .env hoặc biến môi trường máy chạy backend; pydantic-s
 
 CÁCH TRIỂN KHAI THEO THỨ TỰ:
 1. Tạo Settings và get_settings(); đọc .env khi chạy local, ưu tiên biến môi trường.
-   Hiện chỉ PostgreSQL ở Docker: 3 DB URL dùng 127.0.0.1:5432/evoting;
+   Hiện chỉ PostgreSQL ở Docker: 3 DB URL dùng 127.0.0.1:5433/evoting;
    KMS_KEY_DIR dùng ./kms_keys. Docker Compose không truyền config cho backend local.
 2. Khai báo JWT_SECRET, DATABASE_URL, ADMIN_DATABASE_URL, TALLY_DATABASE_URL,
    ADMIN_USERNAME, ADMIN_PASSWORD, KMS_KEY_DIR, ELECTION_ID, ELECTION_START, ELECTION_END.
