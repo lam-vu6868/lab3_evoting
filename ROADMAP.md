@@ -35,7 +35,7 @@ Các chặng 2–8 chưa triển khai.
 
 Code app/core/config.py → app/database/database.py → app/database/models.py → app/api/schemas.py.
 
-- Settings quản lý config; database tạo ba session factory.
+- Settings quản lý config; database tạo ba `AsyncSession` factory dùng asyncpg.
 - Models khớp từng cột trong SQL, không tự tạo bảng bằng app_user.
 - Schemas chỉ kiểm tra JSON; không truy vấn DB, không lộ hash/khóa ra response.
 
@@ -75,7 +75,7 @@ JWT hợp lệ → mở transaction → kiểm tra thời gian/voter/candidate/c
 → mã hóa envelope → INSERT votes → UPDATE trạng thái → COMMIT → trả receipt
 ```
 
-- main sở hữu session.begin; service không commit. Tránh begin sau khi session đã autobegin vì truy vấn trước đó.
+- main sở hữu `async with session.begin()`; service không commit. Tránh begin sau khi session đã autobegin vì truy vấn trước đó.
 - Dùng UUID v4, Core inline INSERT, không lấy RETURNING bằng app_user.
 - Receipt hash từ sig_cast bytes, không nối sang votes.
 

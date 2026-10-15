@@ -2,10 +2,10 @@
 FILE: app/voting/tally.py
 TRẠNG THÁI: KHUNG HƯỚNG DẪN — chưa có xử lý nghiệp vụ.
 MỤC ĐÍCH: Đọc và giải mã phiếu trong bộ nhớ, trả tổng sau khi cuộc bầu cử kết thúc.
-PHỤ THUỘC: TallySession; models; crypto_service.decrypt_vote; config thời gian.
+PHỤ THUỘC: AsyncSession từ TallySession; models; crypto_service.decrypt_vote; config thời gian.
 
 CÁCH TRIỂN KHAI THEO THỨ TỰ:
-1. tally_votes(session, settings, kms) kiểm tra now >= ELECTION_END ngay trong service.
+1. async tally_votes(session, settings, kms) kiểm tra now >= ELECTION_END ngay trong service.
 2. Đọc candidates và votes bằng tally_user; tạo bộ đếm 0 cho mọi ứng viên.
 3. Xáo trộn danh sách phiếu của demo trong RAM, không coi xáo trộn là bảo đảm ẩn danh.
 4. Mỗi phiếu: unwrap wrapped_dek, decrypt ciphertext/iv/tag, parse envelope có giới hạn.

@@ -56,3 +56,29 @@
 - Kết quả MCP cũng chiếm ngữ cảnh; truy vấn tập trung vào vấn đề, tránh lấy dữ liệu thừa hoặc đưa bí mật vào truy vấn.
 - Không đưa snapshot/log tạm của Playwright trong .playwright-mcp/ vào Git. Không tự xóa bằng chứng kiểm tra người dùng cần giữ.
 - Không hứa nhớ toàn bộ hội thoại. Lưu quy tắc bền vững ở file này và tiến độ đã xác minh trong ROADMAP.md để cuộc chat sau có thể đọc lại.
+
+## Bắt đầu một phiên chat mới
+
+Khi người dùng nhắn `Tiếp tục dự án theo AGENTS.md`, thực hiện theo thứ tự sau:
+
+1. Đọc `README.md`, `ROADMAP.md` và `docs/STRUCTURE.md` trước khi kết luận trạng thái dự án.
+2. Kiểm tra code và test thực tế của chặng đang làm; không suy ra tiến độ chỉ từ tên file hoặc khung hướng dẫn.
+3. Báo ngắn gọn chặng đã hoàn thành, chặng kế tiếp và phần chưa kiểm chứng.
+4. Chỉ thực hiện chặng hoặc nhiệm vụ người dùng đang yêu cầu. Nếu người dùng chỉ hỏi kiến thức, giải thích trong chat và không sửa file.
+5. Sau khi sửa code, chạy kiểm tra phù hợp; chỉ cập nhật `ROADMAP.md` và `README.md` khi kết quả đã được kiểm chứng.
+
+Chọn công cụ theo công việc, người dùng không cần nhắc tên công cụ trong mọi yêu cầu:
+
+- Ponytail đang bật để ưu tiên thay đổi nhỏ, rõ ràng và tránh tạo thêm tầng không cần thiết.
+- Agent Skills hỗ trợ chọn quy trình lập kế hoạch, triển khai, gỡ lỗi, kiểm thử, review hoặc bảo mật phù hợp.
+- Context7 dùng để tra tài liệu thư viện hiện hành trước khi dựa vào API hoặc cấu hình có thể đã thay đổi.
+- Playwright dùng khi cần kiểm tra giao diện hoặc luồng trình duyệt đang chạy; dùng dữ liệu thử và không lưu snapshot/log tạm vào Git.
+- Graphify dùng khi cần lập bản đồ kiến trúc, quan hệ file/hàm hoặc truy vấn một codebase lớn. Nếu đã có `graphify-out/`, kiểm tra độ mới và đối chiếu với code trước khi kết luận.
+- OmniRoute không còn được cấu hình cho Codex trong dự án này; không yêu cầu API key hoặc tự cấu hình lại nếu người dùng không yêu cầu rõ ràng.
+
+Câu mở đầu gợi ý cho chat mới:
+
+```text
+Tiếp tục dự án theo AGENTS.md. Đọc README.md, ROADMAP.md và docs/STRUCTURE.md,
+kiểm tra code thực tế rồi cho tôi biết chặng hiện tại. Chưa sửa file cho đến khi xác định xong phạm vi.
+```

@@ -10,9 +10,9 @@
 fastapi==0.110.0
 uvicorn[standard]==0.29.0
 
-# --- Database ---
+# --- Database async ---
 sqlalchemy==2.0.29
-psycopg2-binary==2.9.9
+asyncpg==0.32.0
 
 # --- Cryptography ---
 cryptography==42.0.5

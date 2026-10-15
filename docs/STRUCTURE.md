@@ -31,7 +31,7 @@ HeThongBauCu/
 │   │   └── schemas.py           Request/response JSON của các endpoint
 │   ├── database/
 │   │   ├── __init__.py
-│   │   ├── database.py          3 engine/session và Base
+│   │   ├── database.py          3 AsyncEngine/AsyncSession và Base
 │   │   ├── models.py            Mapping 5 bảng
 │   │   └── seed_voters.py       Nạp cử tri và mã kích hoạt
 │   ├── crypto/
@@ -157,9 +157,9 @@ Nonce/ts/candidate vẫn nằm trong envelope mã hóa theo thiết kế gốc.
 
 ## 5. Ai sở hữu transaction?
 
-main mở `with session.begin()` trước truy vấn DB của thao tác activate/vote.
+main mở `async with session.begin()` trước truy vấn DB của thao tác activate/vote.
 Dependency xác minh JWT không truy vấn DB trên session đó trước khi begin.
-voting_service nhận session, thực hiện SELECT FOR UPDATE/INSERT/UPDATE; không tự commit.
+voting_service nhận AsyncSession, `await` SELECT/INSERT/UPDATE; không tự commit.
 main chỉ trả success sau khi context commit; bắt lỗi bên ngoài context.
 
 ```text
