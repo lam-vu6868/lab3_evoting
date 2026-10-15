@@ -16,6 +16,8 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+# Snapshot, screenshot và log tạm do Playwright MCP tạo.
+.playwright-mcp/
 .coverage
 htmlcov/
 .idea/

@@ -2,10 +2,10 @@
 FILE: app/database/seed_voters.py
 TRẠNG THÁI: KHUNG HƯỚNG DẪN — chưa có xử lý nghiệp vụ.
 MỤC ĐÍCH: Nạp cử tri đủ điều kiện và cấp mã kích hoạt một lần; không tạo khóa RSA cử tri.
-PHỤ THUỘC: app.database.database.AppSession; models.Voter; auth hash mã kích hoạt.
+PHỤ THUỘC: app.database.database.AppSession; models.Voter; auth hash mã kích hoạt; asyncio.
 
 CÁCH TRIỂN KHAI THEO THỨ TỰ:
-1. Tạo main() và guard if __name__ == "__main__" để chạy python -m app.database.seed_voters.
+1. Tạo async main(); guard dùng asyncio.run(main()) khi chạy python -m app.database.seed_voters.
 2. Danh sách 10 cử tri mẫu: voter_id/full_name; không nhận đăng ký công khai tùy ý.
 3. Với cử tri chưa tồn tại, secrets.token_urlsafe(32) tạo activation_code.
 4. INSERT voters: activation_hash, activated=false; password_hash/salt/public_key=NULL.

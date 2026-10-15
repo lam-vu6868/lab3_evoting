@@ -74,7 +74,7 @@ Chưa có cử tri mẫu vì seed script hiện chưa được triển khai.
 
 ## Sau khi viết backend, chạy trên máy local
 
-Kiểm tra .env theo mẫu: DATABASE_URL, ADMIN_DATABASE_URL, TALLY_DATABASE_URL dùng 127.0.0.1;
+Kiểm tra .env theo mẫu: ba DB URL dùng driver `postgresql+asyncpg` và 127.0.0.1;
 KMS_KEY_DIR dùng ./kms_keys. Không dùng hostname postgres của mạng Docker cho backend local.
 Không ghi đè .env đang dùng bằng file mẫu.
 

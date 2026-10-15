@@ -2,10 +2,10 @@
 FILE: app/voting/voting_service.py
 TRẠNG THÁI: KHUNG HƯỚNG DẪN — chưa có xử lý nghiệp vụ.
 MỤC ĐÍCH: Điều phối một lần bỏ phiếu và ba thay đổi DB trong cùng transaction.
-PHỤ THUỘC: models; signature_service; crypto_service; caller cấp AppSession đang trong transaction.
+PHỤ THUỘC: models; signature_service; crypto_service; caller cấp AsyncSession trong transaction.
 
 CÁCH TRIỂN KHAI THEO THỨ TỰ:
-1. cast_vote(session, voter_id, request, settings, kms) trả receipt; không commit trong hàm.
+1. async cast_vote(session, voter_id, request, settings, kms) trả receipt; không commit trong hàm.
 2. Kiểm tra thời gian bầu cử và |now - ts| <= 300 giây; dùng UTC có timezone.
 3. Đọc voter activated/public_key và candidate; lấy voter_id từ JWT đã xác minh, không tin body.
 4. Dựng lại ballot/cast bằng ELECTION_ID từ config; verify cả sig_ballot và sig_cast.
@@ -16,7 +16,7 @@ CÁCH TRIỂN KHAI THEO THỨ TỰ:
 8. UUID v4 sinh ở Python; Core INSERT votes inline để không RETURNING.
 9. SHA-256 trên bytes sig_cast đã decode tạo receipt_hash. UPDATE voter_status:
    has_voted=true, sig_cast bytes, receipt_hash bytes, voted_at làm tròn theo giờ UTC.
-10. Trả receipt hex. Caller chỉ gửi success sau khi thoát session.begin() và commit thành công.
+10. Trả receipt hex. Caller chỉ gửi success sau khi thoát async session.begin() và commit thành công.
 11. Không lưu voter_id/nonce riêng/timestamp ở votes; không sao chép receipt sang votes.
 12. Ném lỗi nghiệp vụ riêng; để lỗi DB thoát transaction rồi main mới chuyển thành HTTP.
 
