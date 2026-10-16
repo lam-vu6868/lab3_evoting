@@ -20,3 +20,23 @@ Payload thiếu/sai kiểu/quá dài bị từ chối; response không lộ trư
 
 ĐỌC KÈM: docs/STRUCTURE.md và ROADMAP.md.
 """
+
+
+'''
+Import	   Là gì	        Dùng để
+BaseModel	Class cha	  Kế thừa để tạo schema, tự validate dữ liệu
+Field	      Hàm	        Thêm ràng buộc cho 1 field (min/max, regex, mô tả...)
+ConfigDict	Dictionary	  Cấu hình cho cả model (đọc ORM, cấm field lạ...)
+'''
+from pydantic import BaseModel, ConfigDict, Field
+
+class Apichema(BaseModel):
+   """Schema API mặc định từ chối các trường không được khai báo.
+      vd: mình chỉ cho 2 trường là tên và full name nhưng client gửi field  lạ như
+        voter_id="V001",
+        full_name="An",
+        is_admin=True,     # ← field lạ
+   """
+   model_config= ConfigDict(extra="forbid")
+
+
