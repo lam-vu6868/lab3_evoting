@@ -33,28 +33,39 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+# lấy các biến môi trường  
 from app.core.config import get_settings
 
 
 settings = get_settings()
-
-
+# tại sao kh kế thừa từ DeclarativeBase cho nhanh tại DeclarativeBase chỉ cho phép
+# 1 class kế thừa.
+# mục đích để chuyển    
 class Base(DeclarativeBase):
-    pass
+    pass 
 
-
-# Mỗi engine dùng một DB role riêng; echo=False tránh log payload SQL.
-app_engine = create_async_engine(settings.DATABASE_URL, echo=False)
+# Mỗi engine(kết nối) dùng một DB role riêng; echo=False để không log nội dung SQL.
+app_engine = create_async_engine(settings.APP_DATABASE_URL, echo=False) # echo in log cú pháp truy vấn ra terminel
 admin_engine = create_async_engine(settings.ADMIN_DATABASE_URL, echo=False)
 tally_engine = create_async_engine(settings.TALLY_DATABASE_URL, echo=False)
 
-# expire_on_commit=False cho phép đọc thuộc tính đã nạp sau commit mà không phát sinh I/O ẩn.
-AppSession = async_sessionmaker(app_engine, expire_on_commit=False)
+# Factory tạo AsyncSession tương ứng với từng role.
+# expire_on_commit=False : mục đích để sau khi commit không xóa object để return chả dữ liệu về cho lớp ui/ux
+# vì mình dùng async nên phải để false vì nếu gọi lại sau khi commit thì sẽ phải đợi await nhưng await kh dc tự gọi 
+# dùng Sync  thì kh cần await nên nó tự gọi lại chỉ thêm 1 query nx thôi    
+AppSession = async_sessionmaker(app_engine, expire_on_commit=False) 
 AdminSession = async_sessionmaker(admin_engine, expire_on_commit=False)
 TallySession = async_sessionmaker(tally_engine, expire_on_commit=False)
 
 
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Cấp AppSession cho FastAPI và luôn đóng session sau request."""
-    async with AppSession() as session:
+    async with AppSession() as session: # Tạo ra 1 session mới, đặt tên nó là session, dùng xong tự đóng.
         yield session
+
+
+
+
+
+ 

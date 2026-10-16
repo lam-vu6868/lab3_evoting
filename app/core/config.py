@@ -66,7 +66,7 @@ class Settings(BaseSettings):
     JWT_EXPIRE_MINUTES: int = Field(default=60, gt=0)
 
     # Kết nối database theo từng quyền
-    DATABASE_URL: str
+    APP_DATABASE_URL: str
     ADMIN_DATABASE_URL: str
     TALLY_DATABASE_URL: str
 
