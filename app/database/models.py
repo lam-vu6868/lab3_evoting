@@ -75,7 +75,7 @@ class Voter(Base):
     )
     full_name: Mapped[str] = mapped_column(
         String(100),
-        nullable=False,
+        nullable=False, #không dc để rỗng 
     )
     activation_hash: Mapped[bytes | None] = mapped_column(
         LargeBinary,
@@ -84,7 +84,7 @@ class Voter(Base):
     activated: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
-        server_default=text("FALSE"),
+        server_default=text("FALSE"), # mặc định bằng False
     )
     password_hash: Mapped[bytes | None] = mapped_column(
         LargeBinary,
@@ -99,10 +99,10 @@ class Voter(Base):
         nullable=True,
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(timezone=True), # TIMESTAMPTZ biết ngày h của dùng cuả nước nào
         nullable=False,
         server_default=text("NOW()"),
-    )
+    ) 
 
 
 class Candidate(Base):
@@ -127,6 +127,7 @@ class Vote(Base):
     __tablename__ = "votes"
 
     __table_args__ = (
+        # dùng octet_lenght() để đếm byte và quy định iv = 12 byte, tag 16 byte
         CheckConstraint(
             "octet_length(iv) = 12",
             name="chk_iv_len",
@@ -138,6 +139,7 @@ class Vote(Base):
     )
 
     vote_id: Mapped[uuid.UUID] = mapped_column(
+        # UUID = kiểu cột UUID của PostgreSQL. as_uuid=True = "trả về cho tôi uuid.UUID object, không phải chuỗi string".
         UUID(as_uuid=True),
         primary_key=True,
         server_default=text("gen_random_uuid()"),

@@ -33,7 +33,8 @@ CREATE TABLE voters (
 
 -- ---------- Đại biểu ----------
 CREATE TABLE candidates (
-    candidate_id  SERIAL       PRIMARY KEY,
+    -- SERIAL = INTEGER + SEQUENCE + DEFAULT nextval(...) + NOT NULL
+    candidate_id  SERIAL       PRIMARY KEY, 
     name          VARCHAR(100) NOT NULL,
     party         VARCHAR(50)
 );
