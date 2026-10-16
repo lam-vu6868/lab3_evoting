@@ -8,9 +8,11 @@ Không ghi tính năng đã hoàn thành khi mới có comment hoặc kế hoạ
 
 # Hệ thống bầu cử điện tử — khung triển khai
 
-Dự án đang ở giai đoạn chuẩn bị code. SQL tạo bảng/quyền, Docker và script xuất Word đã có nội dung;
-backend, giao diện và test nghiệp vụ bầu cử hiện là các file có hướng dẫn, chưa phải ứng dụng chạy hoàn chỉnh.
+Dự án đang được tự code theo từng chặng. SQL tạo bảng/quyền, Docker và script xuất Word đã có nội dung;
+giao diện và các module nghiệp vụ bầu cử vẫn chủ yếu là khung, chưa phải ứng dụng chạy hoàn chỉnh.
 Chặng 1 đã kiểm tra thực tế: PostgreSQL healthy tại 127.0.0.1:5433; 5 kiểm tra khởi tạo/quyền DB đạt.
+Chặng 2 đang thực hiện: cấu hình, ba kết nối/session DB và ánh xạ 5 bảng đã có code;
+3 kiểm tra DB async cùng kiểm tra metadata 5 bảng đạt. Schemas và checkpoint PostgreSQL thật chưa hoàn thành.
 
 ## Bắt đầu tại đây
 

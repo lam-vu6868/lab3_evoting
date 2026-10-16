@@ -38,9 +38,7 @@ from app.core.config import get_settings
 
 
 settings = get_settings()
-# tại sao kh kế thừa từ DeclarativeBase cho nhanh tại DeclarativeBase chỉ cho phép
-# 1 class kế thừa.
-# mục đích để chuyển    
+# Base là lớp cha chung để SQLAlchemy quản lý metadata của các model.
 class Base(DeclarativeBase):
     pass 
 
