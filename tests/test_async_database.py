@@ -18,7 +18,7 @@ from app.core.config import get_settings
 
 TEST_ENV = {
     "JWT_SECRET": "test-only-secret-not-used-outside-tests",
-    "DATABASE_URL": "postgresql+asyncpg://app_user:test@127.0.0.1:5433/evoting",
+    "APP_DATABASE_URL": "postgresql+asyncpg://app_user:test@127.0.0.1:5433/evoting",
     "ADMIN_DATABASE_URL": "postgresql+asyncpg://admin_app:test@127.0.0.1:5433/evoting",
     "TALLY_DATABASE_URL": "postgresql+asyncpg://tally_user:test@127.0.0.1:5433/evoting",
     "ADMIN_USERNAME": "test-admin",

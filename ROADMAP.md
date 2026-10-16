@@ -29,7 +29,7 @@ Backend/frontend không nằm trong Compose; các chặng sau chạy Python loca
 Ba role đăng nhập được; app_user/admin_app không SELECT votes; tally_user đọc được và không sửa phiếu.
 5 kiểm tra trong `tests/test_database_setup.py` đã chạy đạt, gồm quote password có dấu nháy/backslash.
 Chạy lại bằng `python -m unittest tests.test_database_setup -v` khi Docker đang chạy.
-Các chặng 2–8 chưa triển khai.
+Chặng 2 đang triển khai; các chặng 3–8 chưa triển khai.
 
 ## Chặng 2 — Cấu hình và kết nối DB
 
@@ -41,6 +41,16 @@ Code app/core/config.py → app/database/database.py → app/database/models.py 
 
 Checkpoint: đọc được candidates bằng app_user; INSERT phiếu thử bằng Core inline không cần SELECT/RETURNING.
 Chỉ thử trên DB riêng. Phiếu mẫu chưa qua crypto không đưa vào DB bầu cử thật.
+
+**Checkpoint nghỉ 2026-10-16 — chặng 2 đang thực hiện:**
+
+- `config.py` dùng thống nhất `APP_DATABASE_URL`, `ADMIN_DATABASE_URL`, `TALLY_DATABASE_URL`.
+- `database.py` đã có `Base`, ba AsyncEngine, ba AsyncSession factory và `get_db()`; 3 kiểm tra trong
+  `tests/test_async_database.py` chạy đạt bằng Python trong `venv`.
+- `models.py` đã ánh xạ đủ 5 bảng; kiểm tra metadata trả về `candidates`, `used_nonces`,
+  `voter_status`, `voters`, `votes`.
+- Chưa triển khai `schemas.py`; chưa kiểm tra đọc candidates và INSERT phiếu thử trên PostgreSQL riêng,
+  nên chưa đánh dấu hoàn thành checkpoint chặng 2.
 
 ## Chặng 3 — Mật mã và giao thức ký
 
