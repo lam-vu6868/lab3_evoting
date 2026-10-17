@@ -1,6 +1,6 @@
 """
 FILE: app/api/schemas.py
-TRẠNG THÁI: Đang triển khai schema request/response theo từng nhóm.
+TRẠNG THÁI: Đã triển khai đủ schema request/response của thiết kế hiện tại.
 MỤC ĐÍCH: Định nghĩa hợp đồng JSON request/response, không truy vấn DB.
 PHỤ THUỘC: Pydantic; docs/STRUCTURE.md; không cần import models.
 

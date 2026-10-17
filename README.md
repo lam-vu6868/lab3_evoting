@@ -11,8 +11,9 @@ Không ghi tính năng đã hoàn thành khi mới có comment hoặc kế hoạ
 Dự án đang được tự code theo từng chặng. SQL tạo bảng/quyền, Docker và script xuất Word đã có nội dung;
 giao diện và các module nghiệp vụ bầu cử vẫn chủ yếu là khung, chưa phải ứng dụng chạy hoàn chỉnh.
 Chặng 1 đã kiểm tra thực tế: PostgreSQL healthy tại 127.0.0.1:5433; 5 kiểm tra khởi tạo/quyền DB đạt.
-Chặng 2 đang thực hiện: cấu hình, ba kết nối/session DB và ánh xạ 5 bảng đã có code;
-3 kiểm tra DB async cùng kiểm tra metadata 5 bảng đạt. Schemas và checkpoint PostgreSQL thật chưa hoàn thành.
+Chặng 2 đã hoàn thành: cấu hình, ba kết nối/session DB, ánh xạ 5 bảng và schema API đã có code;
+checkpoint SQLAlchemy async trên PostgreSQL thật đạt, gồm đọc candidates và INSERT Core inline luôn rollback.
+Toàn bộ 27 kiểm tra hiện có chạy đạt; các chặng 3–8 chưa triển khai.
 
 ## Bắt đầu tại đây
 
@@ -52,6 +53,9 @@ docker compose logs postgres
 
 # Kiểm tra chặng 1: bảng, role, đăng nhập và phân quyền
 python -m unittest tests.test_database_setup -v
+
+# Kiểm tra checkpoint PostgreSQL của chặng 2; phiếu giả luôn rollback
+python -m unittest tests.test_stage2_postgres -v
 
 # Mở psql trong container để xem bảng
 docker compose exec postgres psql -U postgres -d evoting -c "\dt"
