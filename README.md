@@ -13,7 +13,8 @@ giao diện và các module nghiệp vụ bầu cử vẫn chủ yếu là khung
 Chặng 1 đã kiểm tra thực tế: PostgreSQL healthy tại 127.0.0.1:5433; 5 kiểm tra khởi tạo/quyền DB đạt.
 Chặng 2 đã hoàn thành: cấu hình, ba kết nối/session DB, ánh xạ 5 bảng và schema API đã có code;
 checkpoint SQLAlchemy async trên PostgreSQL thật đạt, gồm đọc candidates và INSERT Core inline luôn rollback.
-Toàn bộ 27 kiểm tra hiện có chạy đạt; các chặng 3–8 chưa triển khai.
+Chặng 3 đang triển khai: KMS đã tạo/nạp lại cặp RSA, bọc/mở khóa AES bằng RSA-OAEP và có 6 kiểm tra đạt.
+Các phần AES-GCM, chữ ký và WebCrypto của chặng 3 cùng các chặng 4–8 chưa triển khai.
 
 ## Bắt đầu tại đây
 
