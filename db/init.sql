@@ -48,8 +48,8 @@ CREATE TABLE votes (
     vote_id      UUID   PRIMARY KEY DEFAULT gen_random_uuid(),
     ciphertext   BYTEA  NOT NULL,                -- AES-GCM ciphertext (đã tách tag)
     wrapped_dek  BYTEA  NOT NULL,                -- DEK được RSA-OAEP wrap bằng public key của KMS
-    iv           BYTEA  NOT NULL,
-    tag          BYTEA  NOT NULL,
+    iv           BYTEA  NOT NULL,                -- sinh ra lúc với dek 
+    tag          BYTEA  NOT NULL,                -- sinh ra lúc mã hóa bằng AES  
     CONSTRAINT chk_iv_len  CHECK (octet_length(iv)  = 12),
     CONSTRAINT chk_tag_len CHECK (octet_length(tag) = 16)
 );

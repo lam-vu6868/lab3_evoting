@@ -29,7 +29,7 @@ Backend/frontend không nằm trong Compose; các chặng sau chạy Python loca
 Ba role đăng nhập được; app_user/admin_app không SELECT votes; tally_user đọc được và không sửa phiếu.
 5 kiểm tra trong `tests/test_database_setup.py` đã chạy đạt, gồm quote password có dấu nháy/backslash.
 Chạy lại bằng `python -m unittest tests.test_database_setup -v` khi Docker đang chạy.
-Chặng 2 đang triển khai; các chặng 3–8 chưa triển khai.
+Chặng 2 đã hoàn thành checkpoint; chặng 3 đang triển khai; các chặng 4–8 chưa triển khai.
 
 ## Chặng 2 — Cấu hình và kết nối DB
 
@@ -42,15 +42,18 @@ Code app/core/config.py → app/database/database.py → app/database/models.py 
 Checkpoint: đọc được candidates bằng app_user; INSERT phiếu thử bằng Core inline không cần SELECT/RETURNING.
 Chỉ thử trên DB riêng. Phiếu mẫu chưa qua crypto không đưa vào DB bầu cử thật.
 
-**Checkpoint nghỉ 2026-10-16 — chặng 2 đang thực hiện:**
+**Đã hoàn thành checkpoint chặng 2 ngày 2026-10-17:**
 
 - `config.py` dùng thống nhất `APP_DATABASE_URL`, `ADMIN_DATABASE_URL`, `TALLY_DATABASE_URL`.
 - `database.py` đã có `Base`, ba AsyncEngine, ba AsyncSession factory và `get_db()`; 3 kiểm tra trong
   `tests/test_async_database.py` chạy đạt bằng Python trong `venv`.
 - `models.py` đã ánh xạ đủ 5 bảng; kiểm tra metadata trả về `candidates`, `used_nonces`,
   `voter_status`, `voters`, `votes`.
-- Chưa triển khai `schemas.py`; chưa kiểm tra đọc candidates và INSERT phiếu thử trên PostgreSQL riêng,
-  nên chưa đánh dấu hoàn thành checkpoint chặng 2.
+- `schemas.py` đã triển khai đủ request/response của thiết kế; 17 kiểm tra schema chạy đạt.
+- Hai kiểm tra trong `tests/test_stage2_postgres.py` xác nhận `app_user` đọc candidates qua SQLAlchemy async,
+  INSERT phiếu giả bằng Core `insert(Vote).inline()` không cần SELECT/RETURNING, rồi luôn ROLLBACK;
+  `tally_user` xác nhận phiếu giả không tồn tại sau test.
+- Toàn bộ 27 kiểm tra hiện có chạy đạt bằng `python -m unittest discover -v` khi Docker healthy.
 
 ## Chặng 3 — Mật mã và giao thức ký
 
@@ -61,6 +64,14 @@ Code app/crypto/kms.py → app/crypto/crypto_service.py → app/crypto/signature
 - Signature thống nhất JSON canonical, RSA-PSS salt 32, SHA-256, Base64.
 - Browser sinh khóa cử tri; kiểm tra chữ ký browser bằng Python trước khi nối UI.
 - Viết test_crypto.py cùng chặng; dùng thư mục khóa tạm và dữ liệu giả.
+
+**Đang triển khai chặng 3 ngày 2026-10-17:**
+
+- `kms.py` đã tạo hoặc nạp lại RSA 2048, lưu private key PKCS8 và public key SPKI dạng PEM,
+  bọc/mở DEK 32 byte bằng RSA-OAEP SHA-256 và không tự thay private key bị mất.
+- 6 kiểm tra KMS trong `tests/test_crypto.py` chạy đạt bằng thư mục tạm: round-trip, dùng lại khóa sau
+  khởi động, phục hồi public key, chặn mất private key, chặn DEK sai độ dài và từ chối private key khác.
+- `crypto_service.py`, `signature_service.py` và `static/js/crypto.js` vẫn là khung; checkpoint chặng 3 chưa hoàn thành.
 
 Checkpoint: round-trip, sửa tag thất bại, cùng plaintext mã hóa khác, restart mở phiếu cũ được; vector JS/Python khớp.
 
