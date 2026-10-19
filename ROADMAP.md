@@ -65,13 +65,17 @@ Code app/crypto/kms.py → app/crypto/crypto_service.py → app/crypto/signature
 - Browser sinh khóa cử tri; kiểm tra chữ ký browser bằng Python trước khi nối UI.
 - Viết test_crypto.py cùng chặng; dùng thư mục khóa tạm và dữ liệu giả.
 
-**Đang triển khai chặng 3 ngày 2026-10-17:**
+**Đang triển khai chặng 3; cập nhật ngày 2026-10-19:**
 
 - `kms.py` đã tạo hoặc nạp lại RSA 2048, lưu private key PKCS8 và public key SPKI dạng PEM,
   bọc/mở DEK 32 byte bằng RSA-OAEP SHA-256 và không tự thay private key bị mất.
 - 6 kiểm tra KMS trong `tests/test_crypto.py` chạy đạt bằng thư mục tạm: round-trip, dùng lại khóa sau
   khởi động, phục hồi public key, chặn mất private key, chặn DEK sai độ dài và từ chối private key khác.
-- `crypto_service.py`, `signature_service.py` và `static/js/crypto.js` vẫn là khung; checkpoint chặng 3 chưa hoàn thành.
+- `crypto_service.py` đã mã hóa phiếu bằng AES-256-GCM với DEK và IV mới cho mỗi phiếu,
+  tách ciphertext/tag, bọc DEK qua KMS và giải mã có kiểm tra tính toàn vẹn.
+  4 kiểm tra AES-GCM trong `tests/test_crypto.py` đạt bằng khóa tạm: round-trip,
+  DEK/IV mới, từ chối dữ liệu bị sửa và độ dài không hợp lệ.
+- `signature_service.py` và `static/js/crypto.js` vẫn là khung; checkpoint chặng 3 chưa hoàn thành.
 
 Checkpoint: round-trip, sửa tag thất bại, cùng plaintext mã hóa khác, restart mở phiếu cũ được; vector JS/Python khớp.
 
