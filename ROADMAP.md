@@ -75,7 +75,11 @@ Code app/crypto/kms.py → app/crypto/crypto_service.py → app/crypto/signature
   tách ciphertext/tag, bọc DEK qua KMS và giải mã có kiểm tra tính toàn vẹn.
   4 kiểm tra AES-GCM trong `tests/test_crypto.py` đạt bằng khóa tạm: round-trip,
   DEK/IV mới, từ chối dữ liệu bị sửa và độ dài không hợp lệ.
-- `signature_service.py` và `static/js/crypto.js` vẫn là khung; checkpoint chặng 3 chưa hoàn thành.
+- `signature_service.py` đã chuẩn hóa ballot/cast thành JSON UTF-8, nạp public key cử tri
+  SPKI PEM RSA 2048, giải mã Base64 chuẩn và kiểm tra RSA-PSS SHA-256/salt 32 byte.
+  5 kiểm tra Python trong `tests/test_crypto.py` đạt bằng khóa cử tri tạm trong RAM;
+  chưa có vector chữ ký từ browser.
+- `static/js/crypto.js` vẫn là khung; checkpoint chặng 3 chưa hoàn thành.
 
 Checkpoint: round-trip, sửa tag thất bại, cùng plaintext mã hóa khác, restart mở phiếu cũ được; vector JS/Python khớp.
 
