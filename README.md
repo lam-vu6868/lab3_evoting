@@ -14,8 +14,9 @@ Chặng 1 đã kiểm tra thực tế: PostgreSQL healthy tại 127.0.0.1:5433; 
 Chặng 2 đã hoàn thành: cấu hình, ba kết nối/session DB, ánh xạ 5 bảng và schema API đã có code;
 checkpoint SQLAlchemy async trên PostgreSQL thật đạt, gồm đọc candidates và INSERT Core inline luôn rollback.
 Chặng 3 đang triển khai: KMS đã tạo/nạp lại cặp RSA và bọc/mở khóa AES bằng RSA-OAEP;
-AES-GCM đã mã hóa/giải mã phiếu. 10 kiểm tra KMS và AES-GCM đạt bằng khóa tạm.
-Chữ ký và WebCrypto của chặng 3 cùng các chặng 4–8 chưa triển khai.
+AES-GCM đã mã hóa/giải mã phiếu; Python đã chuẩn hóa payload và kiểm tra chữ ký RSA-PSS.
+15 kiểm tra mật mã đạt bằng dữ liệu giả. WebCrypto và vector JS/Python của chặng 3 chưa triển khai;
+các chặng 4–8 chưa triển khai.
 
 ## Bắt đầu tại đây
 
@@ -91,7 +92,7 @@ Không ghi đè .env đang dùng bằng file mẫu.
 python -m app.database.seed_voters
 uvicorn app.main:app --reload
 
-# Kiểm tra KMS và AES-GCM; phần chữ ký, password/JWT chưa có test
+# Kiểm tra KMS, AES-GCM và chữ ký Python; phần WebCrypto, password/JWT chưa có test
 python -m unittest tests.test_crypto
 
 # Script xuất Word đã có thể chạy độc lập
