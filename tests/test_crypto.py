@@ -1,6 +1,6 @@
 """
 FILE: tests/test_crypto.py
-TRẠNG THÁI: Đã có kiểm tra cho KMS; các phần AES, chữ ký, password và JWT chưa triển khai.
+TRẠNG THÁI: Đã kiểm tra KMS và AES-GCM; chữ ký, password và JWT chưa triển khai.
 MỤC ĐÍCH: Test hàm mật mã và xác thực, không cần PostgreSQL.
 PHỤ THUỘC: unittest, tempfile; kms, crypto_service, signature_service, auth.
 
@@ -22,6 +22,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from cryptography.exceptions import InvalidTag
+
+from app.crypto.crypto_service import decrypt_vote, encrypt_vote
 from app.crypto.kms import KMS
 
 
@@ -96,6 +99,60 @@ class KMSTests(unittest.TestCase):
 
             with self.assertRaises(ValueError):
                 second_kms.unwrap_dek(wrapped_dek)
+
+
+class VoteCryptoTests(unittest.TestCase):
+    """Kiểm tra phiếu giả bằng KMS tạm, không dùng khóa thật."""
+
+    def setUp(self):
+        self.key_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.key_dir.cleanup)
+        self.kms = KMS(self.key_dir.name)
+        self.kms.ensure_keys()
+
+    def test_encrypt_then_decrypt_returns_original_bytes(self):
+        plaintext = b'{"ballot":{"candidate_id":2},"sig_ballot":"test"}'
+
+        encrypted = encrypt_vote(plaintext, self.kms)
+
+        self.assertEqual(set(encrypted), {"ciphertext", "wrapped_dek", "iv", "tag"})
+        self.assertTrue(all(isinstance(value, bytes) for value in encrypted.values()))
+        self.assertEqual(len(encrypted["iv"]), 12)
+        self.assertEqual(len(encrypted["tag"]), 16)
+        self.assertEqual(decrypt_vote(encrypted, self.kms), plaintext)
+
+    def test_same_plaintext_gets_new_key_and_iv(self):
+        first = encrypt_vote(b"same ballot", self.kms)
+        second = encrypt_vote(b"same ballot", self.kms)
+
+        self.assertNotEqual(
+            self.kms.unwrap_dek(first["wrapped_dek"]),
+            self.kms.unwrap_dek(second["wrapped_dek"]),
+        )
+        self.assertNotEqual(first["iv"], second["iv"])
+        self.assertNotEqual(first["ciphertext"], second["ciphertext"])
+        self.assertEqual(decrypt_vote(second, self.kms), b"same ballot")
+
+    def test_modified_envelope_is_rejected(self):
+        encrypted = encrypt_vote(b"ballot", self.kms)
+        for field in ("ciphertext", "iv", "tag", "wrapped_dek"):
+            with self.subTest(field=field):
+                modified = encrypted.copy()
+                modified[field] = bytes([encrypted[field][0] ^ 1]) + encrypted[field][1:]
+                with self.assertRaises((InvalidTag, ValueError)):
+                    decrypt_vote(modified, self.kms)
+
+    def test_invalid_lengths_and_plaintext_type_are_rejected(self):
+        with self.assertRaises(TypeError):
+            encrypt_vote("ballot", self.kms)
+
+        encrypted = encrypt_vote(b"ballot", self.kms)
+        for field, invalid in (("iv", b"short"), ("tag", b"short")):
+            with self.subTest(field=field):
+                modified = encrypted.copy()
+                modified[field] = invalid
+                with self.assertRaises(ValueError):
+                    decrypt_vote(modified, self.kms)
 
 
 if __name__ == "__main__":
