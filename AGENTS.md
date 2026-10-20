@@ -74,7 +74,7 @@ Chọn công cụ theo công việc, người dùng không cần nhắc tên cô
 - Context7 dùng để tra tài liệu thư viện hiện hành trước khi dựa vào API hoặc cấu hình có thể đã thay đổi.
 - Playwright dùng khi cần kiểm tra giao diện hoặc luồng trình duyệt đang chạy; dùng dữ liệu thử và không lưu snapshot/log tạm vào Git.
 - Graphify dùng khi cần lập bản đồ kiến trúc, quan hệ file/hàm hoặc truy vấn một codebase lớn. Nếu đã có `graphify-out/`, kiểm tra độ mới và đối chiếu với code trước khi kết luận.
-- OmniRoute không còn được cấu hình cho Codex trong dự án này; không yêu cầu API key hoặc tự cấu hình lại nếu người dùng không yêu cầu rõ ràng.
+
 
 Câu mở đầu gợi ý cho chat mới:
 

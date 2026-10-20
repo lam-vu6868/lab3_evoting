@@ -1,6 +1,6 @@
 """
 FILE: tests/test_crypto.py
-TRẠNG THÁI: Đã kiểm tra KMS, AES-GCM và chữ ký Python; WebCrypto, password và JWT chưa triển khai.
+TRẠNG THÁI: Đã kiểm tra KMS, AES-GCM và vector chữ ký WebCrypto; password/JWT chưa triển khai.
 MỤC ĐÍCH: Test hàm mật mã và xác thực, không cần PostgreSQL.
 PHỤ THUỘC: unittest, tempfile; kms, crypto_service, signature_service, auth.
 
@@ -248,6 +248,46 @@ class SignatureTests(unittest.TestCase):
         for encoded in ("%%%", "YQ==", "A" * 344):
             with self.subTest(encoded=encoded[:8]), self.assertRaises(ValueError):
                 decode_signature(encoded)
+
+    def test_browser_webcrypto_vector_matches_python(self):
+        """Vector từ browser thật chỉ giữ public key và hai chữ ký giả."""
+        public_pem = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv9pyygVbPOEhSZo7SKOh\n"
+            "zFAc6bxlnUr+Q+qyYpTupa3x607b71uSqEm3/xJKaRGLrQjp0crPzAONGtpERgDa\n"
+            "j5+1E5K5GY/Z4ijK0wqBXh4JfRP0ilXiQvtWhUFyqo9Yp0xL96iyWjm5uBz6l7lS\n"
+            "8sxdQImjT2977gM0fJW3ArxBG4zmUybA4vOwYtEvpzijj3xJUwPH9WebtXCqc86S\n"
+            "fF+5hj9vEeNhVnM3d87TqoYMvfJ/AxHGcHYvdOm4CfEiC+DqMIvrwjPekPo55fCR\n"
+            "YxhSoIp+FqhZnBGxCfau5nG9yTQxep0F5OlAd1EAT9uIsViFiZkgkY3MoXrBqijF\n"
+            "BwIDAQAB\n"
+            "-----END PUBLIC KEY-----\n"
+        )
+        sig_ballot = (
+            "FfGFIglNcGHKCzcIUiJVkI6sYa7MFYqMYGYIftwPMBD6NN7xhlRu8e7I6Zaj/PwrHlWns0za7MCK"
+            "MDmdheBKVHQONOh7Zs2VdGyHOYC728PQKkBBdcqxbQpyN1DhHt9fuP2btmN6d58Ki5wBurpmpltK"
+            "S2c24LrBogYI0c5T9uz5lvFky4sP5uJ5zn77iZM5B40JM28YZGe9FmkE3Mts244tcehLQt8kx0Pj"
+            "OSUiXsc8r9Zonomk1B/7YHi5ukzMDpYCwWNE8VL2y4dH1phWkZFfEzNgKwWNMvWzI7/6gRBXqFLI"
+            "Xg8w8CYErP1IfdyCrDYA2nfBIIw/HyeI8eej4g=="
+        )
+        sig_cast = (
+            "dZShCzsqVabrYHE6/d4VpDSJXlfyY7SFMHINBGzImZNJYF61HjB7J5jbVMoUoiIPo6AE6mL/hakQ"
+            "lVLcNgItz9MXAHwH0BVsuip5JQ9EfEk+jHG7x6D1L5r3SCEITWlB3OFBELxBBzwmleOssCmdG0AJ"
+            "p4/NuSIduOmcXV68vWIaVlEydK2pdwTa4bFeCyLxkeIU9u05u8jf8b0j4agwmR27Vrd3rGUqeFH4"
+            "hY/zBWhkkeBSv0C03XY2Y+KWr70I5egHfsJbYHzI/Pch6cCWi47Q2MIYQzVjmpRQVhRRm42WXQUw"
+            "/SkaBgXwoCQ+Ty3slo7n9AVqVS3ID3s/uinbAw=="
+        )
+        public_key = load_voter_public_key(public_pem)
+        ballot = build_ballot(2, "a" * 32, 1760000000)
+        cast = build_cast("election-1", "SV001", "a" * 32, 1760000000)
+
+        self.assertTrue(verify_signature(public_key, ballot, decode_signature(sig_ballot)))
+        self.assertTrue(verify_signature(public_key, cast, decode_signature(sig_cast)))
+        self.assertFalse(verify_signature(
+            public_key, {**ballot, "candidate_id": 3}, decode_signature(sig_ballot)
+        ))
+        self.assertFalse(verify_signature(
+            public_key, {**cast, "voter_id": "SV002"}, decode_signature(sig_cast)
+        ))
 
 
 if __name__ == "__main__":

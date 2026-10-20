@@ -29,7 +29,7 @@ Backend/frontend không nằm trong Compose; các chặng sau chạy Python loca
 Ba role đăng nhập được; app_user/admin_app không SELECT votes; tally_user đọc được và không sửa phiếu.
 5 kiểm tra trong `tests/test_database_setup.py` đã chạy đạt, gồm quote password có dấu nháy/backslash.
 Chạy lại bằng `python -m unittest tests.test_database_setup -v` khi Docker đang chạy.
-Chặng 2 đã hoàn thành checkpoint; chặng 3 đang triển khai; các chặng 4–8 chưa triển khai.
+Chặng 2 và 3 đã hoàn thành checkpoint; các chặng 4–8 chưa triển khai.
 
 ## Chặng 2 — Cấu hình và kết nối DB
 
@@ -65,7 +65,7 @@ Code app/crypto/kms.py → app/crypto/crypto_service.py → app/crypto/signature
 - Browser sinh khóa cử tri; kiểm tra chữ ký browser bằng Python trước khi nối UI.
 - Viết test_crypto.py cùng chặng; dùng thư mục khóa tạm và dữ liệu giả.
 
-**Đang triển khai chặng 3; cập nhật ngày 2026-10-19:**
+**Đã hoàn thành checkpoint chặng 3 ngày 2026-10-20:**
 
 - `kms.py` đã tạo hoặc nạp lại RSA 2048, lưu private key PKCS8 và public key SPKI dạng PEM,
   bọc/mở DEK 32 byte bằng RSA-OAEP SHA-256 và không tự thay private key bị mất.
@@ -77,9 +77,12 @@ Code app/crypto/kms.py → app/crypto/crypto_service.py → app/crypto/signature
   DEK/IV mới, từ chối dữ liệu bị sửa và độ dài không hợp lệ.
 - `signature_service.py` đã chuẩn hóa ballot/cast thành JSON UTF-8, nạp public key cử tri
   SPKI PEM RSA 2048, giải mã Base64 chuẩn và kiểm tra RSA-PSS SHA-256/salt 32 byte.
-  5 kiểm tra Python trong `tests/test_crypto.py` đạt bằng khóa cử tri tạm trong RAM;
-  chưa có vector chữ ký từ browser.
-- `static/js/crypto.js` vẫn là khung; checkpoint chặng 3 chưa hoàn thành.
+  5 kiểm tra Python trong `tests/test_crypto.py` đạt bằng khóa cử tri tạm trong RAM.
+- `static/js/crypto.js` đã có WebCrypto RSA-PSS, SPKI/PKCS8, JSON canonical, chữ ký Base64,
+  nonce và helper lưu/nạp khóa demo trong browser; chưa nối vào giao diện.
+- Vector chữ ký `ballot` và `cast` tạo trong browser thật được Python xác minh; sửa ứng viên
+  hoặc voter_id bị từ chối. Test cố định chỉ lưu public key và chữ ký giả trong `tests/test_crypto.py`.
+  16 kiểm tra mật mã đạt; xuất/nhập khóa và localStorage cũng đã kiểm tra trong browser.
 
 Checkpoint: round-trip, sửa tag thất bại, cùng plaintext mã hóa khác, restart mở phiếu cũ được; vector JS/Python khớp.
 
