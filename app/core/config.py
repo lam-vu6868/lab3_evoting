@@ -41,6 +41,9 @@ from pydantic import Field, field_validator, model_validator
 # field_validator dùng để kiểm tra một field cụ thể.
 # Còn model_validator dùng khi bạn cần kiểm tra nhiều field với nhau.
 
+PBKDF2_MIN_ITERATIONS = 600_000
+PBKDF2_MAX_ITERATIONS = 10_000_000
+
 
 class Settings(BaseSettings):
     """
@@ -62,7 +65,7 @@ class Settings(BaseSettings):
     )
 
     # Xác thực đăng nhập. gt=0 nghĩa là giá trị phải lớn hơn 0.
-    JWT_SECRET: str
+    JWT_SECRET: str = Field(min_length=32)  # Secret cần ngẫu nhiên; độ dài chỉ là kiểm tra tối thiểu.
     JWT_EXPIRE_MINUTES: int = Field(default=60, gt=0)
 
     # Kết nối database theo từng quyền
@@ -84,7 +87,11 @@ class Settings(BaseSettings):
 
     # Tham số dùng ở các bước sau
     VOTE_REQUEST_MAX_AGE_SECONDS: int = Field(default=300, gt=0)  # 5 phút
-    PBKDF2_ITERATIONS: int = Field(default=600000, gt=0)  # 600.000 vòng
+    PBKDF2_ITERATIONS: int = Field(
+        default=PBKDF2_MIN_ITERATIONS,
+        ge=PBKDF2_MIN_ITERATIONS,
+        le=PBKDF2_MAX_ITERATIONS,
+    )  # Số vòng lặp cho hash mới; hash cũ tự lưu số vòng lặp riêng.
 
     # Kiểm tra đầu vào
     @field_validator("ELECTION_ID")
