@@ -16,7 +16,9 @@ checkpoint SQLAlchemy async trên PostgreSQL thật đạt, gồm đọc candida
 Chặng 3 đã hoàn thành checkpoint: KMS đã tạo/nạp lại cặp RSA và bọc/mở khóa AES bằng RSA-OAEP;
 AES-GCM đã mã hóa/giải mã phiếu; Python đã chuẩn hóa payload và kiểm tra chữ ký RSA-PSS.
 WebCrypto đã tạo khóa và ký trong browser; chữ ký browser được Python xác minh bằng dữ liệu giả.
-16 kiểm tra mật mã đạt; giao diện chưa nối helper, các chặng 4–8 chưa triển khai.
+Chặng 4 đang triển khai: hash/verify mật khẩu, mã kích hoạt, JWT, Bearer dependency theo role và đối chiếu admin
+đã có code và test; seed cử tri và các route chưa triển khai. 51 kiểm tra không cần PostgreSQL đạt; giao diện chưa nối helper,
+các chặng 5–8 chưa triển khai.
 
 ## Bắt đầu tại đây
 
@@ -92,7 +94,7 @@ Không ghi đè .env đang dùng bằng file mẫu.
 python -m app.database.seed_voters
 uvicorn app.main:app --reload
 
-# Kiểm tra KMS, AES-GCM và vector chữ ký WebCrypto/Python; password/JWT chưa có test
+# Kiểm tra KMS, AES-GCM, chữ ký WebCrypto/Python, mật khẩu và mã kích hoạt; JWT chưa có test
 python -m unittest tests.test_crypto
 
 # Script xuất Word đã có thể chạy độc lập

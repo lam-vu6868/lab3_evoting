@@ -29,7 +29,7 @@ Backend/frontend không nằm trong Compose; các chặng sau chạy Python loca
 Ba role đăng nhập được; app_user/admin_app không SELECT votes; tally_user đọc được và không sửa phiếu.
 5 kiểm tra trong `tests/test_database_setup.py` đã chạy đạt, gồm quote password có dấu nháy/backslash.
 Chạy lại bằng `python -m unittest tests.test_database_setup -v` khi Docker đang chạy.
-Chặng 2 và 3 đã hoàn thành checkpoint; các chặng 4–8 chưa triển khai.
+Chặng 2 và 3 đã hoàn thành checkpoint; chặng 4 đang triển khai; các chặng 5–8 chưa triển khai.
 
 ## Chặng 2 — Cấu hình và kết nối DB
 
@@ -96,6 +96,16 @@ Code app/auth/auth.py → app/database/seed_voters.py → phần /activate, /log
 - Login chỉ đọc DB và trả JWT + election_id; không sinh lại khóa cử tri.
 
 Checkpoint: seed hai lần không reset tài khoản; activate một lần; password sai/JWT sửa bị từ chối.
+
+**Đang triển khai chặng 4; cập nhật ngày 2026-10-20:** `auth.py` đã có hash/verify mật khẩu
+PBKDF2-HMAC-SHA256 với salt riêng và hash lưu số vòng lặp; mã kích hoạt ngẫu nhiên được
+băm SHA-256 và so sánh bằng `hmac.compare_digest`. Hàm tạo/xác minh JWT dùng HS256,
+kiểm tra chữ ký, thời hạn, subject và role. Bearer dependency lấy subject của đúng role voter/admin,
+trả 401 cho token thiếu/sai và 403 cho token sai quyền. Hàm đối chiếu admin đọc cấu hình,
+so sánh username/password bằng `hmac.compare_digest` và không đọc bảng voters.
+15 kiểm tra mật khẩu/cấu hình/mã kích hoạt/JWT/Bearer/admin trong `tests/test_crypto.py` đạt;
+51 kiểm tra không cần PostgreSQL đạt. Seed cử tri và route kích hoạt/đăng nhập vẫn là khung;
+checkpoint chặng 4 chưa hoàn thành.
 
 ## Chặng 5 — Bỏ phiếu trong một transaction
 
