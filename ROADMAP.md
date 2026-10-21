@@ -29,7 +29,7 @@ Backend/frontend không nằm trong Compose; các chặng sau chạy Python loca
 Ba role đăng nhập được; app_user/admin_app không SELECT votes; tally_user đọc được và không sửa phiếu.
 5 kiểm tra trong `tests/test_database_setup.py` đã chạy đạt, gồm quote password có dấu nháy/backslash.
 Chạy lại bằng `python -m unittest tests.test_database_setup -v` khi Docker đang chạy.
-Chặng 2–7 đã hoàn thành checkpoint; chặng 8 chưa triển khai.
+Chặng 2–8 đã hoàn thành checkpoint trong phạm vi demo; các giới hạn chưa kiểm chứng được ghi bên dưới.
 
 ## Chặng 2 — Cấu hình và kết nối DB
 
@@ -199,3 +199,18 @@ Cập nhật README theo trạng thái đã kiểm chứng; tài liệu Word có
 
 Checkpoint: có kết quả thực tế cho replay, concurrency, quyền DB, sai chữ ký, sai thời gian, rollback.
 Nếu file test chỉ có docstring thì chạy thành công với 0 test không phải chứng minh hệ thống đúng.
+
+**Đã hoàn thành checkpoint chặng 8; kiểm chứng ngày 2026-10-21:** `tests/test_attack.py`
+chạy 5 test HTTP/DB trên `evoting_stage5_test_20261021` với dữ liệu giả: kích hoạt một lần,
+đăng nhập sai/đầu vào kiểu SQL injection, JWT sai quyền, chặn kết quả trước giờ kết thúc,
+chữ ký ballot/cast sai, timestamp quá cũ/tương lai, replay chỉ ghi một phiếu, và quyền
+`admin_app`/`tally_user` không cho đọc/sửa `votes` trái nhiệm vụ. Test có guard tên DB
+và host/cổng local; dữ liệu thử được giữ lại, không ghi vào `evoting`. Khóa KMS test
+là tạm nên DB chặng 5 dùng để kiểm bỏ phiếu, không dùng để kiểm phiếu các bản ghi đó.
+`tests/test_voting.py` và `tests/test_tally.py` chạy 12 test đạt trên DB thử nghiệm riêng,
+bao gồm bầu đồng thời, nonce trùng, ngoài thời gian bầu, rollback và kiểm phiếu.
+Nhóm 46 test gồm attack, crypto, activate, login, candidates chạy chung đạt; đã sửa
+`test_login.py` để không phụ thuộc thứ tự cache cấu hình. Ba tài liệu
+`docs/architecture.md`, `docs/technical.md`, `docs/risk-analysis.md` đã viết theo code.
+Chưa kiểm khôi phục private key cử tri từ file backup trên thiết bị mới, kiểm thử tải,
+kiểm toán bảo mật độc lập hoặc vận hành TLS/rate limit. Không coi checkpoint demo là sẵn sàng dùng thật.

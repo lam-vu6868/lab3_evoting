@@ -29,7 +29,10 @@ chặn kiểm sớm/JWT cử tri, phiếu lỗi và truy vấn bảng rỗng tr�
 Chặng 7 đã hoàn thành checkpoint trên database giả riêng: trình duyệt kích hoạt STAGE7DEMO,
 đăng nhập, bầu ứng viên B, bị chặn khi bầu lại; admin bị chặn trước giờ kết thúc và thấy B = 1,
 tổng = 1 sau khi server thử nghiệm chuyển sang giờ kết thúc. Đã thử tải file sao lưu khóa riêng
-và bố cục màn hình 390px. Chặng 8 chưa triển khai.
+và bố cục màn hình 390px. Chặng 8 đã hoàn thành checkpoint demo: 5 test HTTP/quyền DB mới
+trên database thử nghiệm riêng, 12 test bỏ phiếu/kiểm phiếu PostgreSQL và nhóm 46 test
+liên quan đều đạt; ba tài liệu kiến trúc, kỹ thuật và rủi ro đã có nội dung.
+Chưa kiểm khôi phục khóa cử tri từ file backup trên thiết bị mới, tải lớn hoặc triển khai thật.
 
 ## Bắt đầu tại đây
 
@@ -133,6 +136,11 @@ Remove-Item Env:STAGE5_TEST_DB_NAME
 $env:STAGE6_TEST_DB_NAME="evoting_stage6_test_20261021"
 python -m unittest tests.test_tally -v
 Remove-Item Env:STAGE6_TEST_DB_NAME
+
+# Test chặng 8 qua HTTP và phân quyền; DB thử giữ phiếu giả với KMS tạm, không dùng để kiểm phiếu
+$env:STAGE8_TEST_DB_NAME="evoting_stage5_test_20261021"
+python -m unittest tests.test_attack -v
+Remove-Item Env:STAGE8_TEST_DB_NAME
 
 # Script xuất Word đã có thể chạy độc lập
 python docs/build_flow_docx.py

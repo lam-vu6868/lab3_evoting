@@ -3,7 +3,7 @@ FILE: docs/STRUCTURE.md
 MỤC ĐÍCH: Bản đồ thư mục và hợp đồng triển khai thống nhất trước khi viết code.
 CÁCH DÙNG: Đọc cây thư mục, hợp đồng dữ liệu, rồi mở comment đầu module.
 KHI SỬA: Đổi hợp đồng thì cập nhật backend, frontend, tests và ROADMAP.md.
-TRẠNG THÁI: Chặng 4–7 có API và bốn trang giao diện đã nối trên cùng nguồn; chặng 8 chưa triển khai.
+TRẠNG THÁI: Chặng 4–7 có API và bốn trang giao diện; chặng 8 đã có test HTTP/DB và tài liệu demo.
 -->
 
 # Bản đồ cấu trúc và cách bắt đầu code
@@ -79,9 +79,9 @@ HeThongBauCu/
 │   └── test_tally.py           Tổng kiểm phiếu và quyền đọc PostgreSQL riêng
 ├── docs/
 │   ├── STRUCTURE.md            Bạn đang đọc
-│   ├── architecture.md         Khung viết tài liệu kiến trúc
-│   ├── technical.md            Khung viết giải thích kỹ thuật
-│   ├── risk-analysis.md        Khung viết giới hạn/rủi ro
+│   ├── architecture.md         Kiến trúc, dữ liệu và ranh giới quyền
+│   ├── technical.md            Chữ ký, mã hóa, transaction và receipt
+│   ├── risk-analysis.md        Giới hạn và rủi ro bản demo
 │   ├── Luong_du_lieu_he_thong_bau_cu.md
 │   ├── Luong_du_lieu_he_thong_bau_cu.docx
 │   └── build_flow_docx.py      Script xuất Word đã có code
