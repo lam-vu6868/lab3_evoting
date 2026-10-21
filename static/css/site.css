@@ -1,0 +1,37 @@
+/* FILE: static/css/site.css — Giao diện chung dễ đọc, có trạng thái form và màn hình nhỏ.
+   PHỤ THUỘC: HTML trong static/*.html. TỰ KIỂM TRA: mở trang ở 390px và desktop. */
+:root { font-family: system-ui, sans-serif; color: #14253a; background: #f2f5f8; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; }
+header { background: #123557; color: white; padding: 1rem max(1rem, calc((100vw - 72rem) / 2)); }
+header a { color: white; }
+nav { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: .6rem; }
+nav a[aria-current="page"] { font-weight: 700; text-decoration-thickness: .16rem; }
+main { max-width: 44rem; margin: 2rem auto; padding: 0 1rem 3rem; }
+.card { background: white; border: 1px solid #d9e1e9; border-radius: .75rem; padding: clamp(1rem, 4vw, 2rem); box-shadow: 0 .3rem 1.5rem #14253a0b; }
+h1 { margin-top: 0; font-size: clamp(1.5rem, 4vw, 2rem); }
+h2 { font-size: 1.2rem; }
+p { line-height: 1.55; }
+form { display: grid; gap: 1rem; }
+label { display: grid; gap: .35rem; font-weight: 600; }
+input { width: 100%; padding: .7rem .75rem; border: 1px solid #8495a7; border-radius: .35rem; font: inherit; }
+input:focus-visible, button:focus-visible, a:focus-visible { outline: .2rem solid #e69b23; outline-offset: .15rem; }
+button, .button { display: inline-block; width: fit-content; border: 0; border-radius: .35rem; background: #145686; color: white; padding: .7rem 1rem; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; }
+button:hover, .button:hover { background: #0d3e64; }
+button:disabled { opacity: .55; cursor: wait; }
+.secondary { background: #e5edf4; color: #173c5f; }
+.secondary:hover { background: #d6e4ef; }
+.actions { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: 1rem; }
+.muted { color: #526276; font-size: .95rem; }
+.status { min-height: 2.3rem; padding: .65rem .8rem; border-radius: .35rem; background: #e8eef5; margin: 1rem 0; }
+.status[data-kind="error"] { background: #fff0ee; color: #862b20; }
+.status[data-kind="success"] { background: #e6f4eb; color: #17643a; }
+.status[data-kind="warning"] { background: #fff3d9; color: #714a00; }
+.choices { border: 0; padding: 0; margin: 0; display: grid; gap: .5rem; }
+.choices legend { font-weight: 700; margin-bottom: .55rem; }
+.choices label { display: flex; align-items: start; gap: .6rem; border: 1px solid #d5dee7; border-radius: .4rem; padding: .8rem; cursor: pointer; }
+.choices input { width: auto; margin: .25rem 0 0; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: .6rem; border-bottom: 1px solid #d9e1e9; }
+td:last-child, th:last-child { text-align: right; }
+[hidden] { display: none !important; }

@@ -1,6 +1,6 @@
 <!--
 FILE: static/vote.html
-TRẠNG THÁI: KHUNG HƯỚNG DẪN — chưa có xử lý nghiệp vụ.
+TRẠNG THÁI: Đã nối danh sách ứng viên, hai chữ ký và POST /vote.
 MỤC ĐÍCH: Hiển thị ứng viên, tạo hai chữ ký và gửi một yêu cầu bỏ phiếu.
 PHỤ THUỘC: js/crypto.js; GET /candidates; POST /vote; sessionStorage từ login.
 
@@ -19,3 +19,31 @@ Bytes JSON ký khớp Python; nonce mới mỗi thao tác; nhận 401 về login
 
 ĐỌC KÈM: docs/STRUCTURE.md và ROADMAP.md.
 -->
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bỏ phiếu</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/css/site.css">
+  <script type="module" src="/static/js/vote.js"></script>
+</head>
+<body>
+  <header><strong>Hệ thống bầu cử demo</strong><nav aria-label="Điều hướng"><a href="/static/register.html">Kích hoạt</a><a href="/static/login.html">Đăng nhập</a><a href="/static/vote.html" aria-current="page">Bỏ phiếu</a><a href="/static/admin.html">Quản trị</a></nav></header>
+  <main><section class="card" aria-labelledby="title">
+    <h1 id="title">Bỏ phiếu</h1>
+    <p id="identity" class="muted"></p>
+    <form id="vote-form">
+      <fieldset id="candidates" class="choices"><legend>Chọn một ứng viên</legend></fieldset>
+      <button id="submit-vote" type="submit" disabled>Ký và gửi phiếu</button>
+    </form>
+    <p id="status" class="status" role="status" aria-live="polite">Đang tải ứng viên…</p>
+    <p id="receipt" hidden></p>
+    <h2>Khóa riêng</h2>
+    <p class="muted">Khóa riêng nằm trên thiết bị này. Nếu thiếu, nhập file sao lưu PKCS8 PEM đã tải khi kích hoạt.</p>
+    <label>File khóa riêng<input id="private-file" type="file" accept=".pem,text/plain"></label>
+    <div class="actions"><button id="import-key" type="button" class="secondary">Nhập khóa</button><button id="backup-key" type="button" class="secondary">Tải bản sao khóa riêng</button><button id="logout" type="button" class="secondary">Đăng xuất</button></div>
+  </section></main>
+</body>
+</html>

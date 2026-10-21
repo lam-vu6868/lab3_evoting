@@ -3,7 +3,7 @@ FILE: docs/STRUCTURE.md
 MỤC ĐÍCH: Bản đồ thư mục và hợp đồng triển khai thống nhất trước khi viết code.
 CÁCH DÙNG: Đọc cây thư mục, hợp đồng dữ liệu, rồi mở comment đầu module.
 KHI SỬA: Đổi hợp đồng thì cập nhật backend, frontend, tests và ROADMAP.md.
-TRẠNG THÁI: Chặng 4–6 có /activate, /login, /candidates, /vote, /admin/login, /results; giao diện chưa nối.
+TRẠNG THÁI: Chặng 4–7 có API và bốn trang giao diện đã nối trên cùng nguồn; chặng 8 chưa triển khai.
 -->
 
 # Bản đồ cấu trúc và cách bắt đầu code
@@ -19,7 +19,7 @@ Các nhóm dùng chung mật mã/database thay vì sao chép code giữa nhóm.
 HeThongBauCu/
 ├── app/                         Backend, gom theo chức năng
 │   ├── __init__.py              Package gốc
-│   ├── main.py                  FastAPI, gắn các route đã triển khai
+│   ├── main.py                  FastAPI, gắn route và phục vụ /static
 │   ├── core/
 │   │   ├── __init__.py
 │   │   └── config.py            Cấu hình dùng chung
@@ -49,13 +49,20 @@ HeThongBauCu/
 │       ├── vote.py              POST /vote, commit rồi trả biên nhận
 │       ├── tally.py             Giải mã và đếm phiếu sau giờ kết thúc
 │       └── results.py           GET /results, role admin và tally_user
-├── static/                      Giao diện hiện là khung hướng dẫn
+├── static/                      Bốn trang giao diện đã nối API
 │   ├── register.html           Tên cũ, chức năng là kích hoạt /activate
 │   ├── login.html              Đăng nhập cử tri
 │   ├── vote.html               Chọn, ký và gửi phiếu
 │   ├── admin.html              Đăng nhập admin, xem tổng
+│   ├── css/
+│   │   └── site.css            Giao diện chung, hỗ trợ màn hình nhỏ
 │   └── js/
-│       └── crypto.js           MỚI: helper khóa/chữ ký trong browser
+│       ├── crypto.js           Helper khóa/chữ ký trong browser
+│       ├── ui.js               Fetch JSON, trạng thái và tải backup
+│       ├── activate.js         Form kích hoạt và nhập khóa
+│       ├── login.js            Đăng nhập cử tri
+│       ├── vote.js             Tải ứng viên, ký và gửi phiếu
+│       └── admin.js            Đăng nhập admin và hiển thị tổng
 ├── db/
 │   ├── 01_roles.sh             Đã có script tạo 3 role từ biến môi trường
 │   └── init.sql                Đã có bảng, constraint, mẫu ứng viên, quyền
@@ -131,7 +138,8 @@ app/main.py → voting/results.py (đã gắn GET /results)
   ├─ voting/tally.py              Giải mã và chỉ trả tổng
   └─ database/database.py → database/models.py (tally_user đọc votes/candidates)
 
-register.html và vote.html → static/js/crypto.js
+register.html và vote.html → static/js/crypto.js; bốn trang → static/js/ui.js
+app/main.py → static/ (phục vụ giao diện và API cùng nguồn)
 Mọi nhóm cần cấu hình → core/config.py
 ```
 

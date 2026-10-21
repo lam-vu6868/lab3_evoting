@@ -1,6 +1,6 @@
 <!--
 FILE: static/admin.html
-TRẠNG THÁI: KHUNG HƯỚNG DẪN — chưa có xử lý nghiệp vụ.
+TRẠNG THÁI: Đã nối POST /admin/login và GET /results; chỉ hiển thị tổng.
 MỤC ĐÍCH: Admin đăng nhập và xem tổng phiếu; không xem từng phiếu hoặc khóa.
 PHỤ THUỘC: POST /admin/login; GET /results.
 
@@ -15,3 +15,28 @@ Token cử tri bị chặn; số 0 hợp lệ khác lỗi server; không có nú
 
 ĐỌC KÈM: docs/STRUCTURE.md và ROADMAP.md.
 -->
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kết quả bầu cử</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/css/site.css">
+  <script type="module" src="/static/js/admin.js"></script>
+</head>
+<body>
+  <header><strong>Hệ thống bầu cử demo</strong><nav aria-label="Điều hướng"><a href="/static/register.html">Kích hoạt</a><a href="/static/login.html">Đăng nhập cử tri</a><a href="/static/admin.html" aria-current="page">Quản trị</a></nav></header>
+  <main><section class="card" aria-labelledby="title">
+    <h1 id="title">Kết quả bầu cử</h1>
+    <form id="admin-form">
+      <label>Tên quản trị<input name="username" autocomplete="username" required maxlength="100"></label>
+      <label>Mật khẩu<input name="password" type="password" autocomplete="current-password" required></label>
+      <button type="submit">Đăng nhập quản trị</button>
+    </form>
+    <div class="actions"><button id="refresh" type="button" class="secondary" hidden>Xem kết quả</button><button id="logout" type="button" class="secondary" hidden>Đăng xuất</button></div>
+    <p id="status" class="status" role="status" aria-live="polite">Đăng nhập để xem tổng sau khi cuộc bầu cử kết thúc.</p>
+    <section id="results" hidden aria-labelledby="results-title"><h2 id="results-title">Tổng phiếu</h2><table><thead><tr><th scope="col">Ứng viên</th><th scope="col">Số phiếu</th></tr></thead><tbody id="result-rows"></tbody></table><p id="total"></p></section>
+  </section></main>
+</body>
+</html>

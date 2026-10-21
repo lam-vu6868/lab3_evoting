@@ -1,9 +1,9 @@
 """
 FILE: app/main.py
 TRẠNG THÁI: Đã gắn /activate, /login, /candidates, /vote, /admin/login và /results.
-MỤC ĐÍCH: Điểm vào FastAPI, chỉ gắn route từ các module theo chức năng.
+MỤC ĐÍCH: Điểm vào FastAPI, gắn route theo chức năng và phục vụ giao diện /static.
 PHỤ THUỘC: các router đã triển khai, KMS và ba AsyncEngine.
-LUỒNG: Khi startup nạp KMS; gắn route kích hoạt, đăng nhập, ứng viên, bỏ phiếu và kiểm phiếu;
+LUỒNG: Khi startup nạp KMS; gắn route kích hoạt, đăng nhập, ứng viên, bỏ phiếu, kiểm phiếu và /static;
 khi shutdown đóng engine.
 TỰ KIỂM TRA: python -m unittest tests.test_activate tests.test_login tests.test_candidates -v;
 STAGE5_TEST_DB_NAME=... python -m unittest tests.test_voting -v.
@@ -15,6 +15,7 @@ STAGE6_TEST_DB_NAME=... python -m unittest tests.test_tally -v.
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.auth.activate import router as activate_router
 from app.auth.login import router as login_router
@@ -48,3 +49,4 @@ app.include_router(candidates_router)
 app.include_router(vote_router)
 app.include_router(admin_router)
 app.include_router(results_router)
+app.mount("/static", StaticFiles(directory="static"), name="static")

@@ -29,7 +29,7 @@ Backend/frontend không nằm trong Compose; các chặng sau chạy Python loca
 Ba role đăng nhập được; app_user/admin_app không SELECT votes; tally_user đọc được và không sửa phiếu.
 5 kiểm tra trong `tests/test_database_setup.py` đã chạy đạt, gồm quote password có dấu nháy/backslash.
 Chạy lại bằng `python -m unittest tests.test_database_setup -v` khi Docker đang chạy.
-Chặng 2–6 đã hoàn thành checkpoint; các chặng 7–8 chưa triển khai.
+Chặng 2–7 đã hoàn thành checkpoint; chặng 8 chưa triển khai.
 
 ## Chặng 2 — Cấu hình và kết nối DB
 
@@ -177,6 +177,19 @@ Code register.html → login.html → vote.html → admin.html; dùng chung js/c
 - Admin chỉ hiển thị tổng, không tải khóa/phiếu.
 
 Checkpoint: SV001 kích hoạt → login → bầu B → bầu lại bị chặn → admin xem B tăng 1 sau kết thúc.
+
+**Đã hoàn thành checkpoint chặng 7; kiểm chứng ngày 2026-10-21:** bốn trang trong `static/`
+đã nối API qua các module JS theo chức năng, dùng chung `crypto.js` và `ui.js`.
+Trình duyệt tạo khóa cử tri, chỉ gửi public key khi kích hoạt, giữ private key trên thiết bị
+và cho tải/nhập bản sao PKCS8; login chỉ giữ JWT/voter_id/election_id trong sessionStorage.
+Trang bỏ phiếu ký ballot và cast, chờ response rồi mới hiện receipt; trang admin dùng token
+riêng và chỉ hiển thị tổng. FastAPI phục vụ các trang tại `/static/` trên cùng nguồn với API.
+Playwright đã chạy luồng tương đương ví dụ SV001 bằng cử tri giả `STAGE7DEMO` trên
+`evoting_stage7_test_20261021`: kích hoạt, login, bầu B thành công, bầu lại bị 409;
+admin nhận 403 trước giờ kết thúc, sau khi khởi động lại server thử nghiệm với giờ kết thúc
+đã qua thì B = 1 và tổng = 1. File sao lưu khóa được tải; màn hình 390px không tràn ngang.
+78 kiểm tra backend liên quan vẫn đạt. Dữ liệu thử và khóa KMS thử nghiệm được giữ lại;
+không ghi thử vào `evoting`. Chưa kiểm khôi phục từ file backup trên thiết bị mới.
 
 ## Chặng 8 — Kiểm thử tích hợp và tài liệu
 

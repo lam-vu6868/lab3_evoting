@@ -1,6 +1,6 @@
 <!--
 FILE: static/register.html
-TRẠNG THÁI: KHUNG HƯỚNG DẪN — chưa có xử lý nghiệp vụ.
+TRẠNG THÁI: Đã nối form kích hoạt, sao lưu/khôi phục khóa và POST /activate.
 MỤC ĐÍCH: Trang kích hoạt cử tri có sẵn; giữ tên register.html nhưng gọi /activate.
 PHỤ THUỘC: js/crypto.js; POST /activate.
 
@@ -17,3 +17,34 @@ Khóa vẫn có sau reload; public key gửi lên khớp private; gọi API đú
 
 ĐỌC KÈM: docs/STRUCTURE.md và ROADMAP.md.
 -->
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kích hoạt cử tri</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/css/site.css">
+  <script type="module" src="/static/js/activate.js"></script>
+</head>
+<body>
+  <header><strong>Hệ thống bầu cử demo</strong><nav aria-label="Điều hướng"><a href="/static/register.html" aria-current="page">Kích hoạt</a><a href="/static/login.html">Đăng nhập</a><a href="/static/admin.html">Quản trị</a></nav></header>
+  <main><section class="card" aria-labelledby="title">
+    <h1 id="title">Kích hoạt tài khoản</h1>
+    <p>Dùng mã cử tri và mã kích hoạt đã được cấp. Khóa riêng được tạo trong trình duyệt và không gửi lên máy chủ.</p>
+    <form id="activate-form">
+      <label>Mã cử tri<input name="voter_id" autocomplete="username" required maxlength="20" pattern="[A-Za-z0-9_\-]+"></label>
+      <label>Mã kích hoạt<input name="activation_code" type="password" autocomplete="off" required maxlength="256"></label>
+      <label>Mật khẩu mới<input name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128"></label>
+      <button type="submit">Tạo khóa và kích hoạt</button>
+    </form>
+    <p id="status" class="status" role="status" aria-live="polite">Chưa gửi yêu cầu.</p>
+    <div class="actions"><button id="backup" type="button" class="secondary" hidden>Tải bản sao khóa riêng</button><a id="continue" class="button" href="/static/login.html" hidden>Đến đăng nhập</a></div>
+    <h2>Khôi phục khóa đã sao lưu</h2>
+    <p class="muted">Chỉ dùng khi bạn đã kích hoạt trước đó. Giữ file khóa riêng ở nơi an toàn; ai có file này có thể ký thay bạn.</p>
+    <label>Mã cử tri cần khôi phục<input id="restore-id" maxlength="20" pattern="[A-Za-z0-9_\-]+"></label>
+    <label>File khóa riêng PKCS8 PEM<input id="restore-file" type="file" accept=".pem,text/plain"></label>
+    <button id="restore" type="button" class="secondary">Nhập bản sao khóa</button>
+  </section></main>
+</body>
+</html>

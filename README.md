@@ -9,7 +9,7 @@ Không ghi tính năng đã hoàn thành khi mới có comment hoặc kế hoạ
 # Hệ thống bầu cử điện tử — khung triển khai
 
 Dự án đang được tự code theo từng chặng. SQL tạo bảng/quyền, Docker và script xuất Word đã có nội dung;
-giao diện vẫn là khung, chưa phải ứng dụng chạy hoàn chỉnh.
+giao diện đã nối API cho luồng demo; dự án chưa phải hệ thống bầu cử dùng thực tế.
 Chặng 1 đã kiểm tra thực tế: PostgreSQL healthy tại 127.0.0.1:5433; 5 kiểm tra khởi tạo/quyền DB đạt.
 Chặng 2 đã hoàn thành: cấu hình, ba kết nối/session DB, ánh xạ 5 bảng và schema API đã có code;
 checkpoint SQLAlchemy async trên PostgreSQL thật đạt, gồm đọc candidates và INSERT Core inline luôn rollback.
@@ -26,7 +26,10 @@ khóa dòng trạng thái, ghi nonce/phiếu/trạng thái trong một transacti
 Chặng 6 đã hoàn thành checkpoint: POST /admin/login cấp JWT admin; GET /results chỉ đọc bằng tally_user
 sau giờ kết thúc, giải mã phiếu trong RAM và chỉ trả tổng. 5 kiểm tra đạt, gồm đếm phiếu giả đã mã hóa,
 chặn kiểm sớm/JWT cử tri, phiếu lỗi và truy vấn bảng rỗng trên PostgreSQL riêng.
-Giao diện chưa nối helper; các chặng 7–8 chưa triển khai.
+Chặng 7 đã hoàn thành checkpoint trên database giả riêng: trình duyệt kích hoạt STAGE7DEMO,
+đăng nhập, bầu ứng viên B, bị chặn khi bầu lại; admin bị chặn trước giờ kết thúc và thấy B = 1,
+tổng = 1 sau khi server thử nghiệm chuyển sang giờ kết thúc. Đã thử tải file sao lưu khóa riêng
+và bố cục màn hình 390px. Chặng 8 chưa triển khai.
 
 ## Bắt đầu tại đây
 
@@ -50,6 +53,7 @@ Các giới hạn cần phân tích nằm trong hướng dẫn đầu [docs/risk
 ## Thay đổi về cấu trúc
 
 Giữ các thư mục app, static, db, tests, docs. Bên trong app gom thành core/, auth/, api/, database/, crypto/, voting/; main.py là điểm vào và gắn route. POST /activate, /login và /admin/login nằm trong app/auth/; GET /candidates nằm trong app/api/; POST /vote và GET /results nằm trong app/voting/.
+Backend local phục vụ bốn trang tại `/static/register.html`, `/static/login.html`, `/static/vote.html` và `/static/admin.html`.
 register.html vẫn giữ tên nhưng thực hiện kích hoạt qua /activate, không đăng ký cử tri tự do.
 .gitignore bảo vệ cấu hình riêng; docs/tests được quản lý trong Git.
 
@@ -101,6 +105,7 @@ Không ghi đè .env đang dùng bằng file mẫu.
 # Chạy từ thư mục gốc, trong môi trường Python đã cài requirements
 python -m app.database.seed_voters
 uvicorn app.main:app --reload
+# Mở http://127.0.0.1:8000/static/register.html; các trang tiếp theo có liên kết điều hướng
 
 # Kiểm tra KMS, AES-GCM, chữ ký WebCrypto/Python, mật khẩu, mã kích hoạt và JWT
 python -m unittest tests.test_crypto

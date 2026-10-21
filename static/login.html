@@ -1,6 +1,6 @@
 <!--
 FILE: static/login.html
-TRẠNG THÁI: KHUNG HƯỚNG DẪN — chưa có xử lý nghiệp vụ.
+TRẠNG THÁI: Đã nối form đăng nhập với POST /login và sessionStorage.
 MỤC ĐÍCH: Đăng nhập cử tri và giữ token để bỏ phiếu.
 PHỤ THUỘC: POST /login; vote.html; khóa đã lưu từ register.html.
 
@@ -16,3 +16,27 @@ Sai mật khẩu không chuyển trang; không còn password trong storage; đă
 
 ĐỌC KÈM: docs/STRUCTURE.md và ROADMAP.md.
 -->
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Đăng nhập cử tri</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/css/site.css">
+  <script type="module" src="/static/js/login.js"></script>
+</head>
+<body>
+  <header><strong>Hệ thống bầu cử demo</strong><nav aria-label="Điều hướng"><a href="/static/register.html">Kích hoạt</a><a href="/static/login.html" aria-current="page">Đăng nhập</a><a href="/static/admin.html">Quản trị</a></nav></header>
+  <main><section class="card" aria-labelledby="title">
+    <h1 id="title">Đăng nhập cử tri</h1>
+    <form id="login-form">
+      <label>Mã cử tri<input name="voter_id" autocomplete="username" required maxlength="20"></label>
+      <label>Mật khẩu<input name="password" type="password" autocomplete="current-password" required></label>
+      <button type="submit">Đăng nhập</button>
+    </form>
+    <p id="status" class="status" role="status" aria-live="polite">Đăng nhập để chọn ứng viên.</p>
+    <p class="muted">Nếu bạn đổi trình duyệt, hãy dùng file sao lưu khóa riêng tại trang bỏ phiếu.</p>
+  </section></main>
+</body>
+</html>

@@ -15,7 +15,7 @@ Tài liệu giải thích theo ví dụ, dùng để đọc và làm nguồn cho
 
 Ví dụ: Cử tri SV001 — Nguyễn An, kích hoạt tài khoản, đăng nhập rồi bầu ứng viên B có mã 2.
 
-Luồng dưới đây bám theo db/init.sql và ROADMAP.md trong dự án D:\HeThongBauCu. Các chặng 1–6 đã có code và kiểm tra riêng; giao diện vẫn theo thiết kế. Những giá trị như HASH_PASSWORD, KEY_AES_1 bên dưới chỉ là ký hiệu minh họa.
+Luồng dưới đây bám theo db/init.sql và ROADMAP.md trong dự án D:\HeThongBauCu. Các chặng 1–7 đã có code và kiểm tra riêng; chặng kiểm thử tích hợp/tài liệu tiếp theo chưa làm. Những giá trị như HASH_PASSWORD, KEY_AES_1 bên dưới chỉ là ký hiệu minh họa.
 
 ## 1. Trước khi bạn đăng nhập: hệ thống đã chuẩn bị gì?
 
