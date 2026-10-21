@@ -3,7 +3,7 @@ FILE: docs/STRUCTURE.md
 MỤC ĐÍCH: Bản đồ thư mục và hợp đồng triển khai thống nhất trước khi viết code.
 CÁCH DÙNG: Đọc cây thư mục, hợp đồng dữ liệu, rồi mở comment đầu module.
 KHI SỬA: Đổi hợp đồng thì cập nhật backend, frontend, tests và ROADMAP.md.
-TRẠNG THÁI: Chặng 4 có /activate, /login, /candidates và test PostgreSQL riêng; route chặng sau chưa triển khai.
+TRẠNG THÁI: Chặng 4–6 có /activate, /login, /candidates, /vote, /admin/login, /results; giao diện chưa nối.
 -->
 
 # Bản đồ cấu trúc và cách bắt đầu code
@@ -27,7 +27,8 @@ HeThongBauCu/
 │   │   ├── __init__.py
 │   │   ├── auth.py              Password hash, activation hash, JWT
 │   │   ├── activate.py          POST /activate, transaction kích hoạt
-│   │   └── login.py             POST /login, chỉ đọc voters và trả JWT
+│   │   ├── login.py             POST /login, chỉ đọc voters và trả JWT
+│   │   └── admin.py             POST /admin/login, đối chiếu cấu hình
 │   ├── api/
 │   │   ├── __init__.py
 │   │   ├── schemas.py           Request/response JSON của các endpoint
@@ -44,8 +45,10 @@ HeThongBauCu/
 │   │   └── signature_service.py Chuẩn hóa và kiểm tra chữ ký cử tri
 │   └── voting/
 │       ├── __init__.py
-│       ├── voting_service.py    Transaction bỏ phiếu
-│       └── tally.py             Kiểm phiếu, trả tổng
+│       ├── voting_service.py    Xử lý bỏ phiếu trong transaction của route
+│       ├── vote.py              POST /vote, commit rồi trả biên nhận
+│       ├── tally.py             Giải mã và đếm phiếu sau giờ kết thúc
+│       └── results.py           GET /results, role admin và tally_user
 ├── static/                      Giao diện hiện là khung hướng dẫn
 │   ├── register.html           Tên cũ, chức năng là kích hoạt /activate
 │   ├── login.html              Đăng nhập cử tri
@@ -65,7 +68,8 @@ HeThongBauCu/
 │   ├── test_candidates.py      Danh sách ứng viên với session giả
 │   ├── test_stage4_postgres.py Seed/kích hoạt đồng thời trên DB riêng
 │   ├── test_attack.py          API và quyền DB trên môi trường test
-│   └── test_voting.py          MỚI: rollback, bầu đồng thời, quyền INSERT
+│   ├── test_voting.py          PostgreSQL riêng: rollback, bầu đồng thời, nonce trùng
+│   └── test_tally.py           Tổng kiểm phiếu và quyền đọc PostgreSQL riêng
 ├── docs/
 │   ├── STRUCTURE.md            Bạn đang đọc
 │   ├── architecture.md         Khung viết tài liệu kiến trúc
@@ -84,7 +88,7 @@ HeThongBauCu/
 └── ROADMAP.md                  Thứ tự thực hành và kiểm tra từng chặng
 ```
 
-Các route bỏ phiếu và admin sẽ được tạo theo chặng sau.
+Các route backend theo chặng 4–6 đã nằm trong nhóm chức năng tương ứng.
 Không cần thêm thư mục repositories/, controllers/ hoặc routers/: mỗi route nằm trong nhóm chức năng sẵn có.
 venv/ là thư viện đã cài, không sửa comment trong đó. .git/ là metadata Git.
 File Word là đầu ra nhị phân; hướng dẫn nằm trong Markdown nguồn và script xuất Word.
@@ -112,8 +116,20 @@ app/main.py → auth/login.py (đã gắn POST /login)
 app/main.py → api/candidates.py (đã gắn GET /candidates)
   └─ database/database.py → database/models.py (chỉ đọc candidates)
 
-Route bỏ phiếu/admin sẽ được đặt theo chức năng khi đến chặng tương ứng,
-rồi gắn vào main.py.
+app/main.py → voting/vote.py (đã gắn POST /vote)
+  ├─ auth/auth.py                  Kiểm tra JWT cử tri
+  ├─ voting/voting_service.py      Kiểm tra, mã hóa và ghi trong transaction
+  ├─ crypto/signature_service.py  Kiểm tra hai chữ ký
+  ├─ crypto/crypto_service.py → crypto/kms.py
+  └─ database/database.py → database/models.py (nonce, votes, voter_status)
+
+app/main.py → auth/admin.py (đã gắn POST /admin/login)
+  └─ auth/auth.py                  Đối chiếu cấu hình, cấp JWT admin
+
+app/main.py → voting/results.py (đã gắn GET /results)
+  ├─ auth/auth.py                  Kiểm tra JWT admin
+  ├─ voting/tally.py              Giải mã và chỉ trả tổng
+  └─ database/database.py → database/models.py (tally_user đọc votes/candidates)
 
 register.html và vote.html → static/js/crypto.js
 Mọi nhóm cần cấu hình → core/config.py
@@ -171,7 +187,7 @@ Nonce/ts/candidate vẫn nằm trong envelope mã hóa theo thiết kế gốc.
 
 ## 5. Ai sở hữu transaction?
 
-Route activate.py mở `async with session.begin()` trước truy vấn DB; route /vote sau này làm tương tự.
+Route activate.py và vote.py mở `async with session.begin()` trước truy vấn DB.
 Dependency xác minh JWT không truy vấn DB trên session đó trước khi begin.
 voting_service nhận AsyncSession, `await` SELECT/INSERT/UPDATE; không tự commit.
 Route chỉ trả success sau khi context commit; lỗi trong context làm rollback.
@@ -206,7 +222,8 @@ Cần code, test và rà soát dependency/TLS/quyền vận hành trước sử 
 | File | Lý do |
 | --- | --- |
 | .gitattributes | Tránh Windows checkout script shell thành CRLF |
-| app/voting/voting_service.py | Tách transaction bỏ phiếu khỏi HTTP để dễ đọc và kiểm thử |
+| app/voting/voting_service.py | Tách xử lý bỏ phiếu khỏi HTTP để dễ đọc và kiểm thử |
+| app/voting/vote.py | Giữ transaction và HTTP response trong module voting |
 | static/js/crypto.js | Hai trang dùng cùng cách tạo khóa và ký, tránh lệch giao thức |
 | tests/__init__.py | Chạy test qua package unittest |
 | tests/test_voting.py | Kiểm tra đồng thời và rollback bằng PostgreSQL thật |
@@ -215,7 +232,7 @@ Cần code, test và rà soát dependency/TLS/quyền vận hành trước sử 
 
 ## 8. Import và lệnh chạy sau khi gom thư mục
 
-Đây là mẫu import để dùng khi đã viết các hàm/lớp tương ứng; hiện các module vẫn chỉ là khung.
+Đây là mẫu import cho các hàm/lớp đã viết.
 Thư mục auth và file auth.py là hai cấp: không dùng `from app.auth import hash_password`
 khi __init__.py chưa export hàm đó. Dùng đường dẫn đầy đủ như sau:
 

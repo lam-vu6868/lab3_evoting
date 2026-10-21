@@ -29,7 +29,7 @@ Backend/frontend không nằm trong Compose; các chặng sau chạy Python loca
 Ba role đăng nhập được; app_user/admin_app không SELECT votes; tally_user đọc được và không sửa phiếu.
 5 kiểm tra trong `tests/test_database_setup.py` đã chạy đạt, gồm quote password có dấu nháy/backslash.
 Chạy lại bằng `python -m unittest tests.test_database_setup -v` khi Docker đang chạy.
-Chặng 2, 3 và 4 đã hoàn thành checkpoint; các chặng 5–8 chưa triển khai.
+Chặng 2–6 đã hoàn thành checkpoint; các chặng 7–8 chưa triển khai.
 
 ## Chặng 2 — Cấu hình và kết nối DB
 
@@ -138,6 +138,15 @@ JWT hợp lệ → mở transaction → kiểm tra thời gian/voter/candidate/c
 Checkpoint: bầu một lần thành công; hai session đồng thời chỉ một thành công; lỗi giữa chừng rollback tất cả.
 Phải kiểm thử PostgreSQL thật, không thay bằng SQLite cho kiểm tra khóa dòng.
 
+**Đã hoàn thành checkpoint chặng 5; kiểm chứng ngày 2026-10-21:** `vote.py` đã gắn POST /vote
+với JWT cử tri và transaction do route sở hữu. `voting_service.py` kiểm tra cửa sổ bầu cử,
+tuổi yêu cầu, cử tri/ứng viên và cả hai chữ ký RSA-PSS; khóa dòng `voter_status`, ghi
+`used_nonces` và phiếu AES-GCM qua KMS, cập nhật trạng thái và trả receipt sau commit.
+7 kiểm tra trong `tests/test_voting.py` đạt trên database riêng `evoting_stage5_test_20261021`:
+phiếu hợp lệ/biên nhận, bầu lại, hai request đồng thời, nonce trùng, lỗi giữa transaction,
+chữ ký/thời gian sai và dependency JWT. Test dùng cử tri giả, khóa KMS tạm; database thử nghiệm
+giữ dữ liệu giả sau khi chạy. Chưa kiểm luồng HTTP/trình duyệt trực tiếp; phần đó thuộc chặng 7.
+
 ## Chặng 6 — Kiểm phiếu và admin
 
 Code app/voting/tally.py → route /admin/login và /results trong module theo chức năng,
@@ -148,6 +157,15 @@ gắn vào main.py khi triển khai.
 - Phiếu lỗi làm dừng kết quả, không âm thầm bỏ qua; response chỉ có tổng.
 
 Checkpoint: token cử tri bị chặn; kiểm sớm bị chặn; phiếu hợp lệ cho tổng đúng; phiếu hỏng không tạo tổng sai.
+
+**Đã hoàn thành checkpoint chặng 6; kiểm chứng ngày 2026-10-21:** `admin.py` cấp JWT role admin
+sau khi đối chiếu cấu hình; `results.py` yêu cầu role admin và dùng `TallySession`.
+`tally.py` chặn trước `ELECTION_END` ngay trong service, đọc ứng viên/phiếu bằng tally_user,
+giải mã trong RAM và chỉ trả tổng. Phiếu hỏng tag, JSON hoặc ứng viên làm dừng kết quả với lỗi chung.
+5 kiểm tra `tests/test_tally.py` đạt: JWT admin/sai mật khẩu, token cử tri bị chặn, kiểm sớm,
+đếm phiếu giả đã mã hóa, phiếu lỗi và đường đọc bảng rỗng trên PostgreSQL riêng
+`evoting_stage6_test_20261021`. Chưa kiểm đếm phiếu đã lưu thật qua HTTP/trình duyệt;
+phần luồng giao diện thuộc chặng 7.
 
 ## Chặng 7 — Giao diện
 
