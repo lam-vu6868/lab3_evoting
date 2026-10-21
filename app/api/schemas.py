@@ -78,7 +78,7 @@ class LoginRequest(ApiSchema):
       max_length=20,  # Khớp cột voters.voter_id VARCHAR(20).
       pattern=r"^[A-Za-z0-9_-]+$",  # Chỉ nhận chữ ASCII, số, _ và -.
    )
-   # password được service kiểm tra với password_hash trong database.
+   # password được route /login kiểm tra với password_hash trong database.
    password: str = Field(min_length=1, max_length=128)
 
 

@@ -29,7 +29,7 @@ Backend/frontend không nằm trong Compose; các chặng sau chạy Python loca
 Ba role đăng nhập được; app_user/admin_app không SELECT votes; tally_user đọc được và không sửa phiếu.
 5 kiểm tra trong `tests/test_database_setup.py` đã chạy đạt, gồm quote password có dấu nháy/backslash.
 Chạy lại bằng `python -m unittest tests.test_database_setup -v` khi Docker đang chạy.
-Chặng 2 và 3 đã hoàn thành checkpoint; chặng 4 đang triển khai; các chặng 5–8 chưa triển khai.
+Chặng 2, 3 và 4 đã hoàn thành checkpoint; các chặng 5–8 chưa triển khai.
 
 ## Chặng 2 — Cấu hình và kết nối DB
 
@@ -88,7 +88,8 @@ Checkpoint: round-trip, sửa tag thất bại, cùng plaintext mã hóa khác, 
 
 ## Chặng 4 — Mật khẩu, JWT và kích hoạt
 
-Code app/auth/auth.py → app/database/seed_voters.py → phần /activate, /login, /candidates trong main.py.
+Code app/auth/auth.py → app/database/seed_voters.py → app/auth/activate.py →
+app/auth/login.py → app/api/candidates.py; main.py chỉ gắn các router đã triển khai.
 
 - Password: PBKDF2-HMAC-SHA256 + salt riêng, hash tự mô tả iterations/phiên bản.
 - Seed chỉ sinh mã kích hoạt ngẫu nhiên, không sinh khóa RSA cử tri.
@@ -97,7 +98,7 @@ Code app/auth/auth.py → app/database/seed_voters.py → phần /activate, /log
 
 Checkpoint: seed hai lần không reset tài khoản; activate một lần; password sai/JWT sửa bị từ chối.
 
-**Đang triển khai chặng 4; cập nhật ngày 2026-10-21:** `auth.py` đã có hash/verify mật khẩu
+**Đã hoàn thành checkpoint chặng 4; kiểm chứng ngày 2026-10-21:** `auth.py` đã có hash/verify mật khẩu
 PBKDF2-HMAC-SHA256 với salt riêng và hash lưu số vòng lặp; mã kích hoạt ngẫu nhiên được
 băm SHA-256 và so sánh bằng `hmac.compare_digest`. Hàm tạo/xác minh JWT dùng HS256,
 kiểm tra chữ ký, thời hạn, subject và role. Bearer dependency lấy subject của đúng role voter/admin,
@@ -105,13 +106,24 @@ trả 401 cho token thiếu/sai và 403 cho token sai quyền. Hàm đối chi�
 so sánh username/password bằng `hmac.compare_digest` và không đọc bảng voters.
 15 kiểm tra mật khẩu/cấu hình/mã kích hoạt/JWT/Bearer/admin trong `tests/test_crypto.py` đạt;
 `seed_voters.py` đã có code nạp 10 cử tri mẫu: chỉ lưu hash mã kích hoạt, bỏ qua voter_id đã có,
-chỉ hiện mã sau commit. Hai test với session giả kiểm tra chạy lại và lỗi trước commit đạt;
-53 kiểm tra không cần PostgreSQL đạt. Seed chưa được kiểm trên PostgreSQL thật;
-route kích hoạt/đăng nhập vẫn là khung, checkpoint chặng 4 chưa hoàn thành.
+chỉ hiện mã sau commit. Hai test với session giả kiểm tra chạy lại và lỗi trước commit đạt.
+63 kiểm tra không cần PostgreSQL đạt.
+`app/auth/activate.py` đã có POST /activate: kiểm tra public key, khóa dòng voters,
+kiểm tra mã dùng một lần, ghi voters và voter_status trong cùng transaction.
+5 test session giả trong `tests/test_activate.py` đạt. `app/auth/login.py` đã có POST /login chỉ đọc voters, trả JWT
+và election_id; 3 test session giả trong `tests/test_login.py` đạt cho mật khẩu đúng/sai,
+tài khoản chưa kích hoạt và không tồn tại. `app/api/candidates.py` đã có GET /candidates;
+2 test session giả đạt. Trên database riêng `evoting_stage4_test_20261021`, 3 kiểm tra
+trong `tests/test_stage4_postgres.py` đạt: seed hai lần không reset tài khoản (rollback
+toàn bộ dữ liệu seed sau test), hai phiên kích hoạt cùng cử tri chỉ một thành công,
+đăng nhập đúng/sai và app_user đọc 3 ứng viên. 5 kiểm tra cấu trúc/quyền DB hiện có cũng đạt.
+Database thử nghiệm giữ lại các cử tri giả dùng cho kiểm tra đồng thời; không ghi thử vào `evoting`.
+Luồng HTTP/trình duyệt và giao diện sẽ được kiểm ở chặng 7.
 
 ## Chặng 5 — Bỏ phiếu trong một transaction
 
-Code app/voting/voting_service.py → route /vote trong main.py → tests/test_voting.py.
+Code app/voting/voting_service.py → route /vote trong module chức năng riêng,
+gắn vào main.py → tests/test_voting.py.
 
 ```text
 JWT hợp lệ → mở transaction → kiểm tra thời gian/voter/candidate/chữ ký
@@ -119,7 +131,7 @@ JWT hợp lệ → mở transaction → kiểm tra thời gian/voter/candidate/c
 → mã hóa envelope → INSERT votes → UPDATE trạng thái → COMMIT → trả receipt
 ```
 
-- main sở hữu `async with session.begin()`; service không commit. Tránh begin sau khi session đã autobegin vì truy vấn trước đó.
+- Route sở hữu `async with session.begin()`; service không commit. Tránh begin sau khi session đã autobegin vì truy vấn trước đó.
 - Dùng UUID v4, Core inline INSERT, không lấy RETURNING bằng app_user.
 - Receipt hash từ sig_cast bytes, không nối sang votes.
 
@@ -128,7 +140,8 @@ Phải kiểm thử PostgreSQL thật, không thay bằng SQLite cho kiểm tra 
 
 ## Chặng 6 — Kiểm phiếu và admin
 
-Code app/voting/tally.py → /admin/login và /results trong main.py.
+Code app/voting/tally.py → route /admin/login và /results trong module theo chức năng,
+gắn vào main.py khi triển khai.
 
 - Chỉ cho phép khi now >= ELECTION_END, kiểm tra cả ở service.
 - Tally dùng tally_user, mở khóa AES qua KMS rồi đếm.

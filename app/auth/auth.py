@@ -17,7 +17,7 @@ CÁCH TRIỂN KHAI THEO THỨ TỰ:
 5. verify_jwt bắt buộc exp, sub, role hợp lệ; allowlist HS256, không lấy thuật toán từ request.
 6. Dependency lấy Bearer token; require_voter/require_admin kiểm tra đúng role.
 7. Admin đối chiếu cấu hình bằng so sánh hằng thời gian; không lưu admin vào voters.
-8. Login lấy voters ở main: activated=true rồi verify password. Sai trả lỗi chung, không log mật khẩu.
+8. Route /login đọc voters: activated=true rồi verify password. Sai trả lỗi chung, không log mật khẩu.
 
 TỰ KIỂM TRA:
 Cùng mật khẩu có salt khác; mã kích hoạt sai, JWT sửa/hết hạn/sai role đều bị từ chối.
