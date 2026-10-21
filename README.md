@@ -9,7 +9,7 @@ Không ghi tính năng đã hoàn thành khi mới có comment hoặc kế hoạ
 # Hệ thống bầu cử điện tử — khung triển khai
 
 Dự án đang được tự code theo từng chặng. SQL tạo bảng/quyền, Docker và script xuất Word đã có nội dung;
-giao diện và các module nghiệp vụ bầu cử vẫn chủ yếu là khung, chưa phải ứng dụng chạy hoàn chỉnh.
+giao diện đã nối API cho luồng demo; dự án chưa phải hệ thống bầu cử dùng thực tế.
 Chặng 1 đã kiểm tra thực tế: PostgreSQL healthy tại 127.0.0.1:5433; 5 kiểm tra khởi tạo/quyền DB đạt.
 Chặng 2 đã hoàn thành: cấu hình, ba kết nối/session DB, ánh xạ 5 bảng và schema API đã có code;
 checkpoint SQLAlchemy async trên PostgreSQL thật đạt, gồm đọc candidates và INSERT Core inline luôn rollback.
@@ -19,7 +19,20 @@ WebCrypto đã tạo khóa và ký trong browser; chữ ký browser được Pyt
 Chặng 4 đã hoàn thành checkpoint: seed, POST /activate, POST /login và GET /candidates đã có code.
 63 kiểm tra không cần PostgreSQL đạt; 3 kiểm tra trên database thử nghiệm riêng xác nhận seed chạy lại,
 kích hoạt đồng thời chỉ một lần thành công, đăng nhập và đọc ứng viên bằng app_user. 5 kiểm tra
-cấu trúc/quyền DB hiện có cũng đạt. Giao diện chưa nối helper; các chặng 5–8 chưa triển khai.
+cấu trúc/quyền DB hiện có cũng đạt.
+Chặng 5 đã hoàn thành checkpoint: POST /vote kiểm tra thời gian, hai chữ ký, cử tri và ứng viên;
+khóa dòng trạng thái, ghi nonce/phiếu/trạng thái trong một transaction rồi mới trả biên nhận.
+7 kiểm tra trên PostgreSQL riêng đạt, gồm bầu đồng thời, nonce trùng và rollback khi lỗi.
+Chặng 6 đã hoàn thành checkpoint: POST /admin/login cấp JWT admin; GET /results chỉ đọc bằng tally_user
+sau giờ kết thúc, giải mã phiếu trong RAM và chỉ trả tổng. 5 kiểm tra đạt, gồm đếm phiếu giả đã mã hóa,
+chặn kiểm sớm/JWT cử tri, phiếu lỗi và truy vấn bảng rỗng trên PostgreSQL riêng.
+Chặng 7 đã hoàn thành checkpoint trên database giả riêng: trình duyệt kích hoạt STAGE7DEMO,
+đăng nhập, bầu ứng viên B, bị chặn khi bầu lại; admin bị chặn trước giờ kết thúc và thấy B = 1,
+tổng = 1 sau khi server thử nghiệm chuyển sang giờ kết thúc. Đã thử tải file sao lưu khóa riêng
+và bố cục màn hình 390px. Chặng 8 đã hoàn thành checkpoint demo: 5 test HTTP/quyền DB mới
+trên database thử nghiệm riêng, 12 test bỏ phiếu/kiểm phiếu PostgreSQL và nhóm 46 test
+liên quan đều đạt; ba tài liệu kiến trúc, kỹ thuật và rủi ro đã có nội dung.
+Chưa kiểm khôi phục khóa cử tri từ file backup trên thiết bị mới, tải lớn hoặc triển khai thật.
 
 ## Bắt đầu tại đây
 
@@ -42,7 +55,8 @@ Các giới hạn cần phân tích nằm trong hướng dẫn đầu [docs/risk
 
 ## Thay đổi về cấu trúc
 
-Giữ các thư mục app, static, db, tests, docs. Bên trong app gom thành core/, auth/, api/, database/, crypto/, voting/; main.py là điểm vào và gắn route. POST /activate và /login nằm trong app/auth/; GET /candidates nằm trong app/api/. Các route sau tiếp tục nằm trong module theo chức năng.
+Giữ các thư mục app, static, db, tests, docs. Bên trong app gom thành core/, auth/, api/, database/, crypto/, voting/; main.py là điểm vào và gắn route. POST /activate, /login và /admin/login nằm trong app/auth/; GET /candidates nằm trong app/api/; POST /vote và GET /results nằm trong app/voting/.
+Backend local phục vụ bốn trang tại `/static/register.html`, `/static/login.html`, `/static/vote.html` và `/static/admin.html`.
 register.html vẫn giữ tên nhưng thực hiện kích hoạt qua /activate, không đăng ký cử tri tự do.
 .gitignore bảo vệ cấu hình riêng; docs/tests được quản lý trong Git.
 
@@ -80,9 +94,9 @@ Kết nối từ DBeaver/pgAdmin hoặc backend chạy trên máy:
 | User để học/quản trị DB | postgres |
 | Password | Giá trị POSTGRES_ROOT_PASSWORD trong .env |
 
-Backend sau này dùng app_user/admin_app/tally_user theo nhiệm vụ, không dùng postgres.
+Code bỏ phiếu dùng app_user; kiểm phiếu dùng tally_user. admin_app chỉ có quyền đọc ứng viên và không đọc phiếu; không dùng postgres cho nghiệp vụ.
 Volume pgdata giữ nguyên dữ liệu; lần khởi tạo DB mới tạo bảng, role và 3 ứng viên.
-Chưa xác nhận có cử tri mẫu trong DB vì seed script chưa được chạy và kiểm trên PostgreSQL.
+Seed đã được kiểm trên database thử nghiệm riêng; chưa xác nhận đã chạy trên database `evoting`.
 
 ## Sau khi viết backend, chạy trên máy local
 
@@ -94,6 +108,7 @@ Không ghi đè .env đang dùng bằng file mẫu.
 # Chạy từ thư mục gốc, trong môi trường Python đã cài requirements
 python -m app.database.seed_voters
 uvicorn app.main:app --reload
+# Mở http://127.0.0.1:8000/static/register.html; các trang tiếp theo có liên kết điều hướng
 
 # Kiểm tra KMS, AES-GCM, chữ ký WebCrypto/Python, mật khẩu, mã kích hoạt và JWT
 python -m unittest tests.test_crypto
@@ -111,6 +126,21 @@ python -m unittest tests.test_candidates -v
 $env:STAGE4_TEST_DB_NAME="evoting_stage4_test_20261021"
 python -m unittest tests.test_stage4_postgres -v
 Remove-Item Env:STAGE4_TEST_DB_NAME
+
+# Chỉ chạy trên DB thử nghiệm đã nạp init.sql; test ghi cử tri/phiếu giả và giữ dữ liệu
+$env:STAGE5_TEST_DB_NAME="evoting_stage5_test_20261021"
+python -m unittest tests.test_voting -v
+Remove-Item Env:STAGE5_TEST_DB_NAME
+
+# Chỉ chạy trên DB thử nghiệm chặng 6 đã nạp init.sql; test đọc bằng tally_user
+$env:STAGE6_TEST_DB_NAME="evoting_stage6_test_20261021"
+python -m unittest tests.test_tally -v
+Remove-Item Env:STAGE6_TEST_DB_NAME
+
+# Test chặng 8 qua HTTP và phân quyền; DB thử giữ phiếu giả với KMS tạm, không dùng để kiểm phiếu
+$env:STAGE8_TEST_DB_NAME="evoting_stage5_test_20261021"
+python -m unittest tests.test_attack -v
+Remove-Item Env:STAGE8_TEST_DB_NAME
 
 # Script xuất Word đã có thể chạy độc lập
 python docs/build_flow_docx.py

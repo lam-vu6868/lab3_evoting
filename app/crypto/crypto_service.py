@@ -1,6 +1,6 @@
 """
 FILE: app/crypto/crypto_service.py
-TRẠNG THÁI: Đã triển khai mã hóa/giải mã AES-GCM; chưa tích hợp luồng bỏ phiếu.
+TRẠNG THÁI: Đã triển khai AES-GCM; luồng POST /vote dùng encrypt_vote, giải mã dùng trong test chặng 5.
 MỤC ĐÍCH: Mã hóa/giải mã envelope lá phiếu, không biết HTTP hay danh tính tài khoản.
 PHỤ THUỘC: app/crypto/kms.py; cryptography.hazmat.primitives.ciphers.aead.AESGCM.
 

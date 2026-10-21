@@ -65,7 +65,8 @@ class LoginTests(unittest.IsolatedAsyncioTestCase):
         self.session = ReadOnlySession(self.voter)
 
     async def test_correct_password_returns_voter_token_and_election_id(self):
-        response = await login(LoginRequest(voter_id="SV001", password="password-for-test"), self.session)
+        with patch("app.auth.login.get_settings", return_value=SimpleNamespace(ELECTION_ID=TEST_ENV["ELECTION_ID"])):
+            response = await login(LoginRequest(voter_id="SV001", password="password-for-test"), self.session)
         self.assertEqual(response.token_type, "bearer")
         self.assertEqual(response.election_id, TEST_ENV["ELECTION_ID"])
         self.assertEqual(verify_jwt(response.access_token)["sub"], "SV001")

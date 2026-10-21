@@ -15,7 +15,7 @@ Tài liệu giải thích theo ví dụ, dùng để đọc và làm nguồn cho
 
 Ví dụ: Cử tri SV001 — Nguyễn An, kích hoạt tài khoản, đăng nhập rồi bầu ứng viên B có mã 2.
 
-Luồng dưới đây bám theo db/init.sql và ROADMAP.md trong dự án D:\HeThongBauCu. Đây là thiết kế dự kiến; các file Python hiện chưa triển khai xử lý. Những giá trị như HASH_PASSWORD, KEY_AES_1 bên dưới chỉ là ký hiệu minh họa.
+Luồng dưới đây bám theo db/init.sql và ROADMAP.md trong dự án D:\HeThongBauCu. Các chặng 1–7 đã có code và kiểm tra riêng; chặng kiểm thử tích hợp/tài liệu tiếp theo chưa làm. Những giá trị như HASH_PASSWORD, KEY_AES_1 bên dưới chỉ là ký hiệu minh họa.
 
 ## 1. Trước khi bạn đăng nhập: hệ thống đã chuẩn bị gì?
 
@@ -27,7 +27,7 @@ Khi khởi tạo database, SQL tạo 5 bảng và thêm 3 ứng viên vào candi
 | 2 | Trần Thị B | Đảng Y |
 | 3 | Lê Văn C | Đảng Z |
 
-Script app/database/seed_voters.py dự kiến tạo danh sách cử tri và mã kích hoạt. Với SV001, dòng trong voters ban đầu sẽ như sau:
+Script app/database/seed_voters.py tạo danh sách cử tri và mã kích hoạt. Với SV001, dòng trong voters ban đầu sẽ như sau:
 
 | Cột | Giá trị ban đầu |
 | --- | --- |
@@ -42,7 +42,7 @@ Script app/database/seed_voters.py dự kiến tạo danh sách cử tri và mã
 
 Mã kích hoạt nguyên bản được cung cấp cho cử tri; database giữ hash để kiểm tra.
 
-Cũng ở giai đoạn khởi động backend, KMS dự kiến sinh cặp khóa RSA nếu chưa có, lưu ở thư mục KMS_KEY_DIR (dự kiến ./kms_keys trên máy local). Hiện Docker chỉ chạy PostgreSQL; khóa KMS không nằm trong 5 bảng này.
+Cũng ở giai đoạn khởi động backend, KMS tạo cặp khóa RSA nếu chưa có, lưu ở thư mục KMS_KEY_DIR (mặc định ./kms_keys trên máy local). Hiện Docker chỉ chạy PostgreSQL; khóa KMS không nằm trong 5 bảng này.
 
 ## 2. Bạn kích hoạt tài khoản: tạo khóa cử tri và lưu mật khẩu
 
@@ -86,12 +86,12 @@ Backend cập nhật dòng SV001 trong voters:
 | activation_hash | Hash mã kích hoạt | NULL — vô hiệu hóa mã |
 | activated | false | true |
 | password_hash | NULL | HASH_PASSWORD |
-| salt | NULL | Tùy thuật toán băm |
+| salt | NULL | Salt ngẫu nhiên riêng của SV001 |
 | public_key | NULL | Public key SV001 dạng PEM |
 
 voter_id, full_name, created_at vẫn giữ giá trị đã có.
 
-Về salt: nếu dùng thuật toán lưu salt bên trong chuỗi hash như roadmap đề xuất thì cột riêng này có thể để NULL; phần này chưa được triển khai.
+Về salt: backend dùng PBKDF2-HMAC-SHA256; cột salt lưu giá trị ngẫu nhiên riêng, còn password_hash lưu phiên bản, số vòng lặp và digest.
 
 Đồng thời, backend thêm dòng vào voter_status:
 
@@ -129,7 +129,7 @@ Người đăng nhập: SV001
 Thời hạn: đến thời điểm X
 ```
 
-Tên trường và thời hạn cụ thể chưa được code chốt.
+JWT hiện chứa `sub`, `role`, `iat`, `exp`; thời hạn được lấy từ cấu hình backend.
 
 Sơ đồ luồng đăng nhập:
 
@@ -218,7 +218,7 @@ Nội dung:
     sig_cast
 ```
 
-Theo roadmap, server có thể dựng lại cast từ mã cuộc bầu cử đang xử lý, danh tính trong JWT và nonce, ts của ballot để kiểm tra chữ ký. Hai phía phải thống nhất chính xác nội dung ký.
+Server dựng lại cast từ mã cuộc bầu cử đang xử lý, danh tính trong JWT và nonce, ts của ballot để kiểm tra chữ ký. Hai phía phải thống nhất chính xác nội dung ký.
 
 Private key SV001 không nằm trong yêu cầu gửi lên.
 
@@ -307,7 +307,7 @@ Cập nhật dòng SV001 trong voter_status:
 | receipt_hash | NULL | RECEIPT_1 |
 | voted_at | NULL | Thời điểm bỏ phiếu làm tròn theo giờ |
 
-Ví dụ bầu lúc 10:37 thì voted_at dự kiến lưu mốc 10:00 của giờ tương ứng.
+Ví dụ bầu lúc 10:37 thì voted_at lưu mốc 10:00 của giờ tương ứng.
 
 Sơ đồ luồng ghi toàn bộ:
 
@@ -370,7 +370,7 @@ Chưa có dòng kết quả kiểu “B được 1 phiếu”. Kết quả chỉ
 
 ## 9. Admin xem kết quả: đọc gì, giải mã gì, có ghi database không?
 
-Admin gửi username/password đến /admin/login. Backend dự kiến kiểm tra với cấu hình ADMIN_USERNAME, ADMIN_PASSWORD, rồi cấp JWT có quyền admin.
+Admin gửi username/password đến /admin/login. Backend kiểm tra với cấu hình ADMIN_USERNAME, ADMIN_PASSWORD, rồi cấp JWT có quyền admin.
 
 Trong schema hiện tại không có bảng tài khoản admin.
 
@@ -414,7 +414,7 @@ Bộ đếm ứng viên 2 tăng thêm 1
 
 Theo thiết kế, bộ đếm nằm trong RAM khi kiểm phiếu; không có bảng results để lưu kết quả. Các phiếu mã hóa trong votes vẫn giữ nguyên.
 
-Nếu giải mã hoặc kiểm tra tag thất bại thì không được cộng phiếu đó như phiếu hợp lệ; cách báo lỗi cụ thể hiện chưa được triển khai.
+Nếu giải mã, kiểm tra tag, JSON hoặc mã ứng viên thất bại, backend dừng kiểm phiếu và trả lỗi chung thay vì tổng thiếu.
 
 ## 10. Bảng tra nhanh: mỗi dữ liệu cuối cùng nằm ở đâu?
 

@@ -29,7 +29,7 @@ Backend/frontend không nằm trong Compose; các chặng sau chạy Python loca
 Ba role đăng nhập được; app_user/admin_app không SELECT votes; tally_user đọc được và không sửa phiếu.
 5 kiểm tra trong `tests/test_database_setup.py` đã chạy đạt, gồm quote password có dấu nháy/backslash.
 Chạy lại bằng `python -m unittest tests.test_database_setup -v` khi Docker đang chạy.
-Chặng 2, 3 và 4 đã hoàn thành checkpoint; các chặng 5–8 chưa triển khai.
+Chặng 2–8 đã hoàn thành checkpoint trong phạm vi demo; các giới hạn chưa kiểm chứng được ghi bên dưới.
 
 ## Chặng 2 — Cấu hình và kết nối DB
 
@@ -138,6 +138,15 @@ JWT hợp lệ → mở transaction → kiểm tra thời gian/voter/candidate/c
 Checkpoint: bầu một lần thành công; hai session đồng thời chỉ một thành công; lỗi giữa chừng rollback tất cả.
 Phải kiểm thử PostgreSQL thật, không thay bằng SQLite cho kiểm tra khóa dòng.
 
+**Đã hoàn thành checkpoint chặng 5; kiểm chứng ngày 2026-10-21:** `vote.py` đã gắn POST /vote
+với JWT cử tri và transaction do route sở hữu. `voting_service.py` kiểm tra cửa sổ bầu cử,
+tuổi yêu cầu, cử tri/ứng viên và cả hai chữ ký RSA-PSS; khóa dòng `voter_status`, ghi
+`used_nonces` và phiếu AES-GCM qua KMS, cập nhật trạng thái và trả receipt sau commit.
+7 kiểm tra trong `tests/test_voting.py` đạt trên database riêng `evoting_stage5_test_20261021`:
+phiếu hợp lệ/biên nhận, bầu lại, hai request đồng thời, nonce trùng, lỗi giữa transaction,
+chữ ký/thời gian sai và dependency JWT. Test dùng cử tri giả, khóa KMS tạm; database thử nghiệm
+giữ dữ liệu giả sau khi chạy. Chưa kiểm luồng HTTP/trình duyệt trực tiếp; phần đó thuộc chặng 7.
+
 ## Chặng 6 — Kiểm phiếu và admin
 
 Code app/voting/tally.py → route /admin/login và /results trong module theo chức năng,
@@ -148,6 +157,15 @@ gắn vào main.py khi triển khai.
 - Phiếu lỗi làm dừng kết quả, không âm thầm bỏ qua; response chỉ có tổng.
 
 Checkpoint: token cử tri bị chặn; kiểm sớm bị chặn; phiếu hợp lệ cho tổng đúng; phiếu hỏng không tạo tổng sai.
+
+**Đã hoàn thành checkpoint chặng 6; kiểm chứng ngày 2026-10-21:** `admin.py` cấp JWT role admin
+sau khi đối chiếu cấu hình; `results.py` yêu cầu role admin và dùng `TallySession`.
+`tally.py` chặn trước `ELECTION_END` ngay trong service, đọc ứng viên/phiếu bằng tally_user,
+giải mã trong RAM và chỉ trả tổng. Phiếu hỏng tag, JSON hoặc ứng viên làm dừng kết quả với lỗi chung.
+5 kiểm tra `tests/test_tally.py` đạt: JWT admin/sai mật khẩu, token cử tri bị chặn, kiểm sớm,
+đếm phiếu giả đã mã hóa, phiếu lỗi và đường đọc bảng rỗng trên PostgreSQL riêng
+`evoting_stage6_test_20261021`. Chưa kiểm đếm phiếu đã lưu thật qua HTTP/trình duyệt;
+phần luồng giao diện thuộc chặng 7.
 
 ## Chặng 7 — Giao diện
 
@@ -160,6 +178,19 @@ Code register.html → login.html → vote.html → admin.html; dùng chung js/c
 
 Checkpoint: SV001 kích hoạt → login → bầu B → bầu lại bị chặn → admin xem B tăng 1 sau kết thúc.
 
+**Đã hoàn thành checkpoint chặng 7; kiểm chứng ngày 2026-10-21:** bốn trang trong `static/`
+đã nối API qua các module JS theo chức năng, dùng chung `crypto.js` và `ui.js`.
+Trình duyệt tạo khóa cử tri, chỉ gửi public key khi kích hoạt, giữ private key trên thiết bị
+và cho tải/nhập bản sao PKCS8; login chỉ giữ JWT/voter_id/election_id trong sessionStorage.
+Trang bỏ phiếu ký ballot và cast, chờ response rồi mới hiện receipt; trang admin dùng token
+riêng và chỉ hiển thị tổng. FastAPI phục vụ các trang tại `/static/` trên cùng nguồn với API.
+Playwright đã chạy luồng tương đương ví dụ SV001 bằng cử tri giả `STAGE7DEMO` trên
+`evoting_stage7_test_20261021`: kích hoạt, login, bầu B thành công, bầu lại bị 409;
+admin nhận 403 trước giờ kết thúc, sau khi khởi động lại server thử nghiệm với giờ kết thúc
+đã qua thì B = 1 và tổng = 1. File sao lưu khóa được tải; màn hình 390px không tràn ngang.
+78 kiểm tra backend liên quan vẫn đạt. Dữ liệu thử và khóa KMS thử nghiệm được giữ lại;
+không ghi thử vào `evoting`. Chưa kiểm khôi phục từ file backup trên thiết bị mới.
+
 ## Chặng 8 — Kiểm thử tích hợp và tài liệu
 
 Hoàn thiện test_attack.py và chạy các test đã viết trên môi trường riêng.
@@ -168,3 +199,18 @@ Cập nhật README theo trạng thái đã kiểm chứng; tài liệu Word có
 
 Checkpoint: có kết quả thực tế cho replay, concurrency, quyền DB, sai chữ ký, sai thời gian, rollback.
 Nếu file test chỉ có docstring thì chạy thành công với 0 test không phải chứng minh hệ thống đúng.
+
+**Đã hoàn thành checkpoint chặng 8; kiểm chứng ngày 2026-10-21:** `tests/test_attack.py`
+chạy 5 test HTTP/DB trên `evoting_stage5_test_20261021` với dữ liệu giả: kích hoạt một lần,
+đăng nhập sai/đầu vào kiểu SQL injection, JWT sai quyền, chặn kết quả trước giờ kết thúc,
+chữ ký ballot/cast sai, timestamp quá cũ/tương lai, replay chỉ ghi một phiếu, và quyền
+`admin_app`/`tally_user` không cho đọc/sửa `votes` trái nhiệm vụ. Test có guard tên DB
+và host/cổng local; dữ liệu thử được giữ lại, không ghi vào `evoting`. Khóa KMS test
+là tạm nên DB chặng 5 dùng để kiểm bỏ phiếu, không dùng để kiểm phiếu các bản ghi đó.
+`tests/test_voting.py` và `tests/test_tally.py` chạy 12 test đạt trên DB thử nghiệm riêng,
+bao gồm bầu đồng thời, nonce trùng, ngoài thời gian bầu, rollback và kiểm phiếu.
+Nhóm 46 test gồm attack, crypto, activate, login, candidates chạy chung đạt; đã sửa
+`test_login.py` để không phụ thuộc thứ tự cache cấu hình. Ba tài liệu
+`docs/architecture.md`, `docs/technical.md`, `docs/risk-analysis.md` đã viết theo code.
+Chưa kiểm khôi phục private key cử tri từ file backup trên thiết bị mới, kiểm thử tải,
+kiểm toán bảo mật độc lập hoặc vận hành TLS/rate limit. Không coi checkpoint demo là sẵn sàng dùng thật.

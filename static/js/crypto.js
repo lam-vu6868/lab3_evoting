@@ -1,6 +1,6 @@
 /*
 FILE: static/js/crypto.js
-TRẠNG THÁI: Đã triển khai helper, kiểm tra trong browser; chưa nối giao diện.
+TRẠNG THÁI: Đã triển khai helper và nối trang kích hoạt/bỏ phiếu.
 MỤC ĐÍCH: Các helper WebCrypto dùng chung cho trang kích hoạt và bỏ phiếu.
 PHỤ THUỘC: Web Crypto API, TextEncoder, btoa/atob, localStorage của browser;
            hợp đồng byte với app/crypto/signature_service.py; không cần thư viện ngoài.
@@ -138,4 +138,16 @@ export async function loadPrivateKey(voterId) {
   if (stored === null) return null;
   // Nạp và kiểm tra định dạng thật; dữ liệu hỏng phải báo lỗi, không tạo khóa mới.
   return importPrivateKeyPem(toPem("PRIVATE KEY", base64ToBytes(stored)));
+}
+
+export async function saveVoterKeys(voterId, keyPair) {
+  const publicPem = await exportPublicKeyPem(keyPair.publicKey);
+  await savePrivateKey(voterId, keyPair.privateKey);
+  localStorage.setItem(`voter_public_key:${voterId}`, publicPem);
+  return publicPem;
+}
+
+export function loadPublicKeyPem(voterId) {
+  storageKey(voterId);
+  return localStorage.getItem(`voter_public_key:${voterId}`);
 }

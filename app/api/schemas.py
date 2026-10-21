@@ -6,7 +6,8 @@ PHỤ THUỘC: Pydantic; docs/STRUCTURE.md; không cần import models.
 
 CÁCH TRIỂN KHAI THEO THỨ TỰ:
 1. ActivationRequest: voter_id, activation_code, password, public_key. LoginRequest: voter_id, password.
-2. AdminLoginRequest: username, password. TokenResponse: access_token, token_type, election_id cho cử tri.
+2. AdminLoginRequest: username, password. TokenResponse có election_id cho cử tri;
+   AdminTokenResponse chỉ có access_token và token_type.
 3. CandidateResponse: candidate_id, name, party. Ballot: candidate_id int dương, nonce, ts int.
 4. VoteRequest: ballot, sig_ballot Base64, sig_cast Base64. VoteResponse: success, receipt dạng hex.
 5. ResultResponse: results [{candidate_id, name, votes}], total_votes.
@@ -105,6 +106,13 @@ class TokenResponse(ApiSchema):
       max_length=100,  # Giới hạn kích thước dữ liệu trả về.
       pattern=r"^[\x20-\x7E]+$",  # Chỉ nhận ký tự ASCII nhìn thấy được.
    )
+
+
+class AdminTokenResponse(ApiSchema):
+   """JWT của quản trị viên; không trả mã cuộc bầu cử hay thông tin tài khoản."""
+
+   access_token: str = Field(min_length=1, max_length=4096)
+   token_type: Literal["bearer"] = "bearer"
 
 
 class CandidateResponse(ApiSchema):
