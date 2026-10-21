@@ -3,14 +3,14 @@ FILE: docs/STRUCTURE.md
 MỤC ĐÍCH: Bản đồ thư mục và hợp đồng triển khai thống nhất trước khi viết code.
 CÁCH DÙNG: Đọc cây thư mục, hợp đồng dữ liệu, rồi mở comment đầu module.
 KHI SỬA: Đổi hợp đồng thì cập nhật backend, frontend, tests và ROADMAP.md.
-TRẠNG THÁI: Hướng dẫn triển khai; các module nghiệp vụ vẫn là khung.
+TRẠNG THÁI: Chặng 4 có /activate, /login, /candidates và test PostgreSQL riêng; route chặng sau chưa triển khai.
 -->
 
 # Bản đồ cấu trúc và cách bắt đầu code
 
 Giữ 5 bảng, 3 role DB, hai chữ ký, AES-GCM + RSA-OAEP và luồng ban đầu.
 Gom backend theo chức năng: core, auth, api, database, crypto, voting.
-main.py là điểm vào duy nhất ở gốc app. Giữ tên file quen thuộc, ví dụ app/auth/auth.py.
+main.py là điểm vào duy nhất ở gốc app, chỉ gắn route theo chức năng.
 Các nhóm dùng chung mật mã/database thay vì sao chép code giữa nhóm.
 
 ## 1. Cây thư mục
@@ -19,16 +19,19 @@ Các nhóm dùng chung mật mã/database thay vì sao chép code giữa nhóm.
 HeThongBauCu/
 ├── app/                         Backend, gom theo chức năng
 │   ├── __init__.py              Package gốc
-│   ├── main.py                  FastAPI, 6 endpoint, gọi các nhóm bên dưới
+│   ├── main.py                  FastAPI, gắn các route đã triển khai
 │   ├── core/
 │   │   ├── __init__.py
 │   │   └── config.py            Cấu hình dùng chung
 │   ├── auth/
 │   │   ├── __init__.py
-│   │   └── auth.py              Password hash, activation hash, JWT
+│   │   ├── auth.py              Password hash, activation hash, JWT
+│   │   ├── activate.py          POST /activate, transaction kích hoạt
+│   │   └── login.py             POST /login, chỉ đọc voters và trả JWT
 │   ├── api/
 │   │   ├── __init__.py
-│   │   └── schemas.py           Request/response JSON của các endpoint
+│   │   ├── schemas.py           Request/response JSON của các endpoint
+│   │   └── candidates.py        GET /candidates, chỉ đọc ứng viên
 │   ├── database/
 │   │   ├── __init__.py
 │   │   ├── database.py          3 AsyncEngine/AsyncSession và Base
@@ -53,10 +56,14 @@ HeThongBauCu/
 ├── db/
 │   ├── 01_roles.sh             Đã có script tạo 3 role từ biến môi trường
 │   └── init.sql                Đã có bảng, constraint, mẫu ứng viên, quyền
-├── tests/                      Test chặng 1 đã có; test nghiệp vụ còn là khung
+├── tests/                      Test theo từng chặng
 │   ├── __init__.py             MỚI: package tests
 │   ├── test_database_setup.py  Đã có 5 kiểm tra chặng 1 trên PostgreSQL
 │   ├── test_crypto.py          Mật mã/password/JWT, không cần DB
+│   ├── test_activate.py        Kích hoạt với session giả, không ghi DB
+│   ├── test_login.py           Đăng nhập với session giả, không ghi DB
+│   ├── test_candidates.py      Danh sách ứng viên với session giả
+│   ├── test_stage4_postgres.py Seed/kích hoạt đồng thời trên DB riêng
 │   ├── test_attack.py          API và quyền DB trên môi trường test
 │   └── test_voting.py          MỚI: rollback, bầu đồng thời, quyền INSERT
 ├── docs/
@@ -77,29 +84,36 @@ HeThongBauCu/
 └── ROADMAP.md                  Thứ tự thực hành và kiểm tra từng chặng
 ```
 
-Không cần thêm repositories/, controllers/, routers/ lúc này: 6 route và các service đã đủ tách nhiệm vụ.
+Các route bỏ phiếu và admin sẽ được tạo theo chặng sau.
+Không cần thêm thư mục repositories/, controllers/ hoặc routers/: mỗi route nằm trong nhóm chức năng sẵn có.
 venv/ là thư viện đã cài, không sửa comment trong đó. .git/ là metadata Git.
 File Word là đầu ra nhị phân; hướng dẫn nằm trong Markdown nguồn và script xuất Word.
 
 ## 2. Cách đọc comment mỗi file
 
-Mỗi khung có: MỤC ĐÍCH → PHỤ THUỘC → CÁCH TRIỂN KHAI THEO THỨ TỰ → TỰ KIỂM TRA.
-Viết code dưới docstring/comment. Tên hàm là giao ước dự kiến, chưa tồn tại.
+Mỗi file có comment/docstring đầu nêu mục đích, phụ thuộc, luồng và cách tự kiểm tra.
+File chỉ có hướng dẫn chưa phải là tính năng đã triển khai.
 File cấu hình/SQL đã có nội dung thì đọc hướng dẫn trước khi thay đổi chức năng.
 
 ## 3. Quan hệ gọi hàm
 
 ```text
-app/main.py
-  ├─ auth/auth.py                 Xác minh người gọi
-  ├─ api/schemas.py               Hợp đồng HTTP JSON
-  ├─ database/database.py         Session và transaction
-  ├─ database/models.py           Dữ liệu activate/login/candidates
-  ├─ voting/voting_service.py     Nghiệp vụ bỏ phiếu
-  │    ├─ crypto/signature_service.py
-  │    ├─ crypto/crypto_service.py → crypto/kms.py
-  │    └─ database/models.py
-  └─ voting/tally.py → crypto/crypto_service.py → crypto/kms.py
+app/main.py → auth/activate.py (đã gắn POST /activate)
+  ├─ auth/auth.py                  Kiểm tra mã, băm mật khẩu
+  ├─ crypto/signature_service.py  Kiểm tra public key
+  ├─ api/schemas.py                Hợp đồng JSON
+  └─ database/database.py → database/models.py (voters, voter_status)
+
+app/main.py → auth/login.py (đã gắn POST /login)
+  ├─ auth/auth.py                  Kiểm tra mật khẩu, cấp JWT
+  ├─ core/config.py                ELECTION_ID
+  └─ database/database.py → database/models.py (chỉ đọc voters)
+
+app/main.py → api/candidates.py (đã gắn GET /candidates)
+  └─ database/database.py → database/models.py (chỉ đọc candidates)
+
+Route bỏ phiếu/admin sẽ được đặt theo chức năng khi đến chặng tương ứng,
+rồi gắn vào main.py.
 
 register.html và vote.html → static/js/crypto.js
 Mọi nhóm cần cấu hình → core/config.py
@@ -157,10 +171,10 @@ Nonce/ts/candidate vẫn nằm trong envelope mã hóa theo thiết kế gốc.
 
 ## 5. Ai sở hữu transaction?
 
-main mở `async with session.begin()` trước truy vấn DB của thao tác activate/vote.
+Route activate.py mở `async with session.begin()` trước truy vấn DB; route /vote sau này làm tương tự.
 Dependency xác minh JWT không truy vấn DB trên session đó trước khi begin.
 voting_service nhận AsyncSession, `await` SELECT/INSERT/UPDATE; không tự commit.
-main chỉ trả success sau khi context commit; bắt lỗi bên ngoài context.
+Route chỉ trả success sau khi context commit; lỗi trong context làm rollback.
 
 ```text
 BEGIN

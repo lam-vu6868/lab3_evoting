@@ -12,7 +12,7 @@ CÁCH TRIỂN KHAI THEO THỨ TỰ:
 4. verify_signature(public_key, payload, signature_bytes): RSA-PSS, SHA-256,
    MGF1 SHA-256, salt_length=32. JS phải dùng đúng saltLength=32.
 5. Chữ ký truyền HTTP bằng Base64 chuẩn, decode chặt chẽ trước verify.
-6. Tách hàm thuần khỏi HTTPException; trả kết quả/lỗi để main chuyển thành HTTP.
+6. Tách hàm thuần khỏi HTTPException; route gọi hàm sẽ chuyển lỗi thành HTTP.
 7. Sinh key/sign trong Python chỉ dùng cho test; khóa cử tri thật sinh trong browser.
 
 TỰ KIỂM TRA:

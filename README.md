@@ -16,9 +16,10 @@ checkpoint SQLAlchemy async trên PostgreSQL thật đạt, gồm đọc candida
 Chặng 3 đã hoàn thành checkpoint: KMS đã tạo/nạp lại cặp RSA và bọc/mở khóa AES bằng RSA-OAEP;
 AES-GCM đã mã hóa/giải mã phiếu; Python đã chuẩn hóa payload và kiểm tra chữ ký RSA-PSS.
 WebCrypto đã tạo khóa và ký trong browser; chữ ký browser được Python xác minh bằng dữ liệu giả.
-Chặng 4 đang triển khai: hash/verify mật khẩu, mã kích hoạt, JWT, Bearer dependency theo role và đối chiếu admin
-đã có code và test; seed cử tri và các route chưa triển khai. 51 kiểm tra không cần PostgreSQL đạt; giao diện chưa nối helper,
-các chặng 5–8 chưa triển khai.
+Chặng 4 đã hoàn thành checkpoint: seed, POST /activate, POST /login và GET /candidates đã có code.
+63 kiểm tra không cần PostgreSQL đạt; 3 kiểm tra trên database thử nghiệm riêng xác nhận seed chạy lại,
+kích hoạt đồng thời chỉ một lần thành công, đăng nhập và đọc ứng viên bằng app_user. 5 kiểm tra
+cấu trúc/quyền DB hiện có cũng đạt. Giao diện chưa nối helper; các chặng 5–8 chưa triển khai.
 
 ## Bắt đầu tại đây
 
@@ -41,7 +42,7 @@ Các giới hạn cần phân tích nằm trong hướng dẫn đầu [docs/risk
 
 ## Thay đổi về cấu trúc
 
-Giữ các thư mục app, static, db, tests, docs. Bên trong app gom thành core/, auth/, api/, database/, crypto/, voting/; main.py là điểm vào. Bổ sung app/voting/voting_service.py, static/js/crypto.js và test_voting.py để tách nhiệm vụ rõ.
+Giữ các thư mục app, static, db, tests, docs. Bên trong app gom thành core/, auth/, api/, database/, crypto/, voting/; main.py là điểm vào và gắn route. POST /activate và /login nằm trong app/auth/; GET /candidates nằm trong app/api/. Các route sau tiếp tục nằm trong module theo chức năng.
 register.html vẫn giữ tên nhưng thực hiện kích hoạt qua /activate, không đăng ký cử tri tự do.
 .gitignore bảo vệ cấu hình riêng; docs/tests được quản lý trong Git.
 
@@ -81,7 +82,7 @@ Kết nối từ DBeaver/pgAdmin hoặc backend chạy trên máy:
 
 Backend sau này dùng app_user/admin_app/tally_user theo nhiệm vụ, không dùng postgres.
 Volume pgdata giữ nguyên dữ liệu; lần khởi tạo DB mới tạo bảng, role và 3 ứng viên.
-Chưa có cử tri mẫu vì seed script hiện chưa được triển khai.
+Chưa xác nhận có cử tri mẫu trong DB vì seed script chưa được chạy và kiểm trên PostgreSQL.
 
 ## Sau khi viết backend, chạy trên máy local
 
@@ -94,8 +95,22 @@ Không ghi đè .env đang dùng bằng file mẫu.
 python -m app.database.seed_voters
 uvicorn app.main:app --reload
 
-# Kiểm tra KMS, AES-GCM, chữ ký WebCrypto/Python, mật khẩu và mã kích hoạt; JWT chưa có test
+# Kiểm tra KMS, AES-GCM, chữ ký WebCrypto/Python, mật khẩu, mã kích hoạt và JWT
 python -m unittest tests.test_crypto
+
+# Kiểm tra route kích hoạt với session giả, không ghi PostgreSQL
+python -m unittest tests.test_activate -v
+
+# Kiểm tra route đăng nhập với session giả, không ghi PostgreSQL
+python -m unittest tests.test_login -v
+
+# Kiểm tra ứng viên với session giả
+python -m unittest tests.test_candidates -v
+
+# Chỉ chạy khi đã chuẩn bị database thử nghiệm riêng, không dùng evoting đang dùng
+$env:STAGE4_TEST_DB_NAME="evoting_stage4_test_20261021"
+python -m unittest tests.test_stage4_postgres -v
+Remove-Item Env:STAGE4_TEST_DB_NAME
 
 # Script xuất Word đã có thể chạy độc lập
 python docs/build_flow_docx.py
