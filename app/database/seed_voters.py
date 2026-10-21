@@ -6,7 +6,7 @@ PHỤ THUỘC: app.database.database.AppSession; models.Voter; auth hash mã kí
 
 CÁCH TRIỂN KHAI THEO THỨ TỰ:
 1. Tạo async main(); guard dùng asyncio.run(main()) khi chạy python -m app.database.seed_voters.
-2. Danh sách 10 cử tri mẫu: voter_id/full_name; không nhận đăng ký công khai tùy ý.
+2. Danh sách 20 cử tri mẫu: SV001–SV010 và SV0011–SV0020; không nhận đăng ký công khai tùy ý.
 3. Mỗi lần thử INSERT, secrets.token_urlsafe(32) tạo activation_code; chỉ cấp mã nếu cử tri mới.
 4. INSERT voters: activation_hash, activated=false; password_hash/salt/public_key=NULL.
 5. Commit thành công rồi mới xuất mã cấp cho người vận hành trong thao tác seed chủ động.
@@ -37,6 +37,9 @@ async def main() -> None:
     sample_voters = [
         (f"SV{number:03}", f"Cử tri mẫu {number:02}")
         for number in range(1, 11)
+    ] + [
+        (f"SV{number:04}", f"Cử tri mẫu {number:02}")
+        for number in range(11, 21)
     ]
     issued_codes: list[tuple[str, str]] = []
 
