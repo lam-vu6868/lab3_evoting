@@ -97,15 +97,17 @@ Code app/auth/auth.py → app/database/seed_voters.py → phần /activate, /log
 
 Checkpoint: seed hai lần không reset tài khoản; activate một lần; password sai/JWT sửa bị từ chối.
 
-**Đang triển khai chặng 4; cập nhật ngày 2026-10-20:** `auth.py` đã có hash/verify mật khẩu
+**Đang triển khai chặng 4; cập nhật ngày 2026-10-21:** `auth.py` đã có hash/verify mật khẩu
 PBKDF2-HMAC-SHA256 với salt riêng và hash lưu số vòng lặp; mã kích hoạt ngẫu nhiên được
 băm SHA-256 và so sánh bằng `hmac.compare_digest`. Hàm tạo/xác minh JWT dùng HS256,
 kiểm tra chữ ký, thời hạn, subject và role. Bearer dependency lấy subject của đúng role voter/admin,
 trả 401 cho token thiếu/sai và 403 cho token sai quyền. Hàm đối chiếu admin đọc cấu hình,
 so sánh username/password bằng `hmac.compare_digest` và không đọc bảng voters.
 15 kiểm tra mật khẩu/cấu hình/mã kích hoạt/JWT/Bearer/admin trong `tests/test_crypto.py` đạt;
-51 kiểm tra không cần PostgreSQL đạt. Seed cử tri và route kích hoạt/đăng nhập vẫn là khung;
-checkpoint chặng 4 chưa hoàn thành.
+`seed_voters.py` đã có code nạp 10 cử tri mẫu: chỉ lưu hash mã kích hoạt, bỏ qua voter_id đã có,
+chỉ hiện mã sau commit. Hai test với session giả kiểm tra chạy lại và lỗi trước commit đạt;
+53 kiểm tra không cần PostgreSQL đạt. Seed chưa được kiểm trên PostgreSQL thật;
+route kích hoạt/đăng nhập vẫn là khung, checkpoint chặng 4 chưa hoàn thành.
 
 ## Chặng 5 — Bỏ phiếu trong một transaction
 

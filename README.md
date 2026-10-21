@@ -17,7 +17,8 @@ Chặng 3 đã hoàn thành checkpoint: KMS đã tạo/nạp lại cặp RSA và
 AES-GCM đã mã hóa/giải mã phiếu; Python đã chuẩn hóa payload và kiểm tra chữ ký RSA-PSS.
 WebCrypto đã tạo khóa và ký trong browser; chữ ký browser được Python xác minh bằng dữ liệu giả.
 Chặng 4 đang triển khai: hash/verify mật khẩu, mã kích hoạt, JWT, Bearer dependency theo role và đối chiếu admin
-đã có code và test; seed cử tri và các route chưa triển khai. 51 kiểm tra không cần PostgreSQL đạt; giao diện chưa nối helper,
+đã có code và test. Seed cử tri đã có code, 2 test dùng session giả đạt nhưng chưa kiểm trên PostgreSQL;
+các route chưa triển khai. 53 kiểm tra không cần PostgreSQL đạt; giao diện chưa nối helper,
 các chặng 5–8 chưa triển khai.
 
 ## Bắt đầu tại đây
@@ -81,7 +82,7 @@ Kết nối từ DBeaver/pgAdmin hoặc backend chạy trên máy:
 
 Backend sau này dùng app_user/admin_app/tally_user theo nhiệm vụ, không dùng postgres.
 Volume pgdata giữ nguyên dữ liệu; lần khởi tạo DB mới tạo bảng, role và 3 ứng viên.
-Chưa có cử tri mẫu vì seed script hiện chưa được triển khai.
+Chưa xác nhận có cử tri mẫu trong DB vì seed script chưa được chạy và kiểm trên PostgreSQL.
 
 ## Sau khi viết backend, chạy trên máy local
 

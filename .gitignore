@@ -18,6 +18,8 @@ __pycache__/
 .pytest_cache/
 # Snapshot, screenshot và log tạm do Playwright MCP tạo.
 .playwright-mcp/
+# Đồ thị và bộ nhớ đệm do Graphify tạo tại máy local.
+graphify-out/
 .coverage
 htmlcov/
 .idea/
