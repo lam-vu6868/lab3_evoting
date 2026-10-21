@@ -75,16 +75,16 @@ class SeedVotersTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(committed, "Mã chỉ được in sau commit")
             output.append(" ".join(map(str, values)))
 
-        codes = [f"fake-code-{number:02}" for number in range(1, 21)]
+        codes = [f"fake-code-{number:02}" for number in range(1, 41)]
         with patch.object(self.seed, "AppSession", FakeFactory), patch.object(
             self.seed.secrets, "token_urlsafe", side_effect=codes
         ), patch("builtins.print", side_effect=capture_print):
             await self.seed.main()
             first_output = "\n".join(output)
             self.assertTrue(committed)
-            self.assertEqual(len(rows), 10)
-            for number in range(1, 11):
-                voter_id = f"SV{number:03}"
+            self.assertEqual(len(rows), 20)
+            for number in range(1, 21):
+                voter_id = f"SV{number:03}" if number <= 10 else f"SV{number:04}"
                 code = codes[number - 1]
                 self.assertIn(f"{voter_id}: {code}", first_output)
                 self.assertEqual(rows[voter_id]["activation_hash"], hash_activation_code(code))
@@ -93,7 +93,7 @@ class SeedVotersTests(unittest.IsolatedAsyncioTestCase):
 
             output.clear()
             await self.seed.main()
-            self.assertEqual(len(rows), 10)
+            self.assertEqual(len(rows), 20)
             self.assertNotIn("fake-code", "\n".join(output))
             self.assertIn("Đã thêm 0 cử tri mới.", output)
 

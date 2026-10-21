@@ -105,8 +105,9 @@ kiểm tra chữ ký, thời hạn, subject và role. Bearer dependency lấy su
 trả 401 cho token thiếu/sai và 403 cho token sai quyền. Hàm đối chiếu admin đọc cấu hình,
 so sánh username/password bằng `hmac.compare_digest` và không đọc bảng voters.
 15 kiểm tra mật khẩu/cấu hình/mã kích hoạt/JWT/Bearer/admin trong `tests/test_crypto.py` đạt;
-`seed_voters.py` đã có code nạp 10 cử tri mẫu: chỉ lưu hash mã kích hoạt, bỏ qua voter_id đã có,
-chỉ hiện mã sau commit. Hai test với session giả kiểm tra chạy lại và lỗi trước commit đạt.
+`seed_voters.py` hiện có code nạp 20 cử tri mẫu (SV001–SV010, SV0011–SV0020): chỉ lưu hash
+mã kích hoạt, bỏ qua voter_id đã có, chỉ hiện mã sau commit. Hai test với session giả kiểm tra
+danh sách 20 cử tri, chạy lại và lỗi trước commit đạt; chưa kiểm bản mở rộng trên PostgreSQL.
 63 kiểm tra không cần PostgreSQL đạt.
 `app/auth/activate.py` đã có POST /activate: kiểm tra public key, khóa dòng voters,
 kiểm tra mã dùng một lần, ghi voters và voter_status trong cùng transaction.
