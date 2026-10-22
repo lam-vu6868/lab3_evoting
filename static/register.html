@@ -1,6 +1,6 @@
 <!--
 FILE: static/register.html
-TRẠNG THÁI: Đã nối form kích hoạt, sao lưu/khôi phục khóa và POST /activate.
+TRẠNG THÁI: Đã nối form kích hoạt, sao lưu khóa và POST /activate.
 MỤC ĐÍCH: Trang kích hoạt cử tri có sẵn; giữ tên register.html nhưng gọi /activate.
 PHỤ THUỘC: js/crypto.js; POST /activate.
 
@@ -8,7 +8,7 @@ CÁCH TRIỂN KHAI THEO THỨ TỰ:
 1. Form voter_id, activation_code, password; full_name không do người dùng tự đăng ký.
 2. Dùng ES module import helper crypto.js; WebCrypto tạo RSA-PSS keypair trong browser.
 3. Lưu private key theo voter_id; chỉ gửi public key SPKI PEM cùng form JSON lên /activate.
-4. Có nút backup/import private key PKCS8; giải thích file backup phải giữ kín.
+4. Có nút tải bản sao private key PKCS8; nhập bản sao ở trang bỏ phiếu sau đăng nhập.
 5. Giữ khóa vừa tạo khi gửi lỗi mạng để retry; không ghi đè khóa đã có một cách im lặng.
 6. Khi thành công chuyển login; private key không gửi backend. Escape nội dung hiển thị bằng textContent.
 
@@ -40,11 +40,6 @@ Khóa vẫn có sau reload; public key gửi lên khớp private; gọi API đú
     </form>
     <p id="status" class="status" role="status" aria-live="polite">Chưa gửi yêu cầu.</p>
     <div class="actions"><button id="backup" type="button" class="secondary" hidden>Tải bản sao khóa riêng</button><a id="continue" class="button" href="/static/login.html" hidden>Đến đăng nhập</a></div>
-    <h2>Khôi phục khóa đã sao lưu</h2>
-    <p class="muted">Chỉ dùng khi bạn đã kích hoạt trước đó. Giữ file khóa riêng ở nơi an toàn; ai có file này có thể ký thay bạn.</p>
-    <label>Mã cử tri cần khôi phục<input id="restore-id" maxlength="20" pattern="[A-Za-z0-9_\-]+"></label>
-    <label>File khóa riêng PKCS8 PEM<input id="restore-file" type="file" accept=".pem,text/plain"></label>
-    <button id="restore" type="button" class="secondary">Nhập bản sao khóa</button>
   </section></main>
 </body>
 </html>

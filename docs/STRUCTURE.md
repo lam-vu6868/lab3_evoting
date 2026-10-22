@@ -59,7 +59,7 @@ HeThongBauCu/
 │   └── js/
 │       ├── crypto.js           Helper khóa/chữ ký trong browser
 │       ├── ui.js               Fetch JSON, trạng thái và tải backup
-│       ├── activate.js         Form kích hoạt và nhập khóa
+│       ├── activate.js         Form kích hoạt và tải bản sao khóa
 │       ├── login.js            Đăng nhập cử tri
 │       ├── vote.js             Tải ứng viên, ký và gửi phiếu
 │       └── admin.js            Đăng nhập admin và hiển thị tổng
