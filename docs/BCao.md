@@ -2,9 +2,11 @@
 
 **Cách dùng:** Mở file ở chế độ xem trước Markdown có hỗ trợ Mermaid để thấy các ô và mũi tên của `sequenceDiagram`, rồi đọc lần lượt các đoạn **Em trình bày**. Không cần đọc từng ký hiệu trên sơ đồ. Toàn bài theo một ví dụ giả: cử tri `SV001` chọn ứng viên B (`candidate_id = 2`). Không đưa mã kích hoạt, mật khẩu, JWT hay khóa riêng thật lên màn hình lớp.
 
+**Hệ thống dùng mô hình gì?** Hệ thống mô phỏng mô hình **KMS (Key Management System, hệ thống quản lý khóa)** để bảo vệ khóa mã hóa phiếu. Mỗi phiếu có một khóa AES riêng gọi là DEK. Backend dùng public key của cặp khóa KMS để bọc DEK trước khi lưu vào database; khi kiểm phiếu, private key của cặp khóa đó mở DEK để giải mã. Trong bài này, KMS là module và thư mục khóa **nằm trong backend**, chưa phải dịch vụ độc lập. Việc xác thực cử tri là luồng khác: mã kích hoạt, mật khẩu, JWT và chữ ký RSA-PSS.
+
 ## 1. Mục tiêu của đề tài
 
-**Sơ đồ hành trình:**
+**Sơ đồ tổng quan:**
 
 ```mermaid
 sequenceDiagram
@@ -24,35 +26,37 @@ sequenceDiagram
 
 ## 2. Công nghệ và nhiệm vụ của từng phần
 
-| Phần                    | Công nghệ                                 | Công việc                                                   |
-| ----------------------- | ----------------------------------------- | ----------------------------------------------------------- |
-| Giao diện               | HTML, CSS, JavaScript trong `static/`     | Bốn trang: kích hoạt, đăng nhập, bỏ phiếu, quản trị.        |
-| Mật mã trên trình duyệt | Web Crypto API                            | Tạo cặp khóa RSA-PSS của cử tri và ký trước khi gửi phiếu.  |
-| Backend                 | Python, FastAPI,                          | Nhận API, kiểm JSON, xác thực và thực hiện nghiệp vụ.       |
+| Phần                    | Công nghệ                                 | Công việc                                                              |
+| ----------------------- | ----------------------------------------- | ---------------------------------------------------------------------- |
+| Giao diện               | HTML, CSS, JavaScript                     | Bốn trang: kích hoạt, đăng nhập, bỏ phiếu, quản trị.                   |
+| Mật mã trên trình duyệt | Web Crypto API                            | Tạo cặp khóa RSA-PSS của cử tri và ký trước khi gửi phiếu.             |
+| Backend                 | Python, FastAPI,                          | Nhận API, kiểm JSON, xác thực và thực hiện nghiệp vụ.                  |
 | Database                | PostgreSQL, SQLAlchemy                    | Lưu dữ liệu bầu cử; ngăn một cử tri gửi thành công hai phiếu cùng lúc. |
-| Xác thực                | PBKDF2-HMAC-SHA256 với salt, JWT ký HS256 | Lưu hash mật khẩu, cấp mã đăng nhập có hạn và kiểm role.    |
-| Phiếu và khóa           | RSA-PSS, AES-256-GCM, RSA-OAEP            | Ký phiếu, mã hóa phiếu và bọc khóa AES.                     |
+| Xác thực                | PBKDF2-HMAC-SHA256 với salt, JWT ký HS256 | Lưu hash mật khẩu, cấp mã đăng nhập có hạn và kiểm role.               |
+| Phiếu và khóa           | RSA-PSS, AES-256-GCM, RSA-OAEP            | Ký phiếu, mã hóa phiếu và bọc khóa AES.                                |
 
-**Sơ đồ các thành phần trao đổi:**
+**Sơ đồ một phiếu đi qua các thành phần:**
 
 ```mermaid
 sequenceDiagram
     participant CT as Trình duyệt cử tri
-    participant AD as Trình duyệt admin
-    participant API as FastAPI
+    participant API as Backend FastAPI
     participant DB as PostgreSQL
-    participant KMS as KMS mô phỏng
-    CT->>API: Gọi activate, login, candidates, vote
-    API->>DB: app_user đọc và ghi theo quyền
-    API->>KMS: Bọc khóa AES của phiếu
-    AD->>API: Gọi admin/login rồi results
-    API->>DB: tally_user đọc votes và candidates
-    API->>KMS: Mở khóa AES để kiểm phiếu
-    API-->>AD: Trả tổng kết quả
-    Note over API,KMS: KMS là module trong backend, không phải dịch vụ riêng
+    participant AD as Trình duyệt admin
+    CT->>API: Đăng nhập
+    API->>DB: Kiểm tra tài khoản
+    API-->>CT: Trả JWT
+    CT->>CT: Ký phiếu bằng private key cử tri
+    CT->>API: Gửi lựa chọn và chữ ký
+    API->>API: Kiểm chữ ký, mã hóa phiếu, bọc khóa AES
+    API->>DB: Lưu phiếu mã hóa và trạng thái đã bầu
+    AD->>API: Xem kết quả sau giờ kết thúc
+    API->>DB: Đọc phiếu mã hóa
+    API->>API: Mở khóa AES, giải mã và đếm phiếu
+    API-->>AD: Chỉ trả tổng theo ứng viên
 ```
 
-**Em trình bày:** “Frontend có bốn trang, backend FastAPI có sáu API. Docker hiện chỉ chạy PostgreSQL; backend chạy local. Ví dụ, nếu SV001 bấm gửi phiếu hai lần rất nhanh, yêu cầu thứ hai phải chờ; khi được xử lý, nó thấy SV001 đã bầu và bị từ chối. Nếu quá trình ghi phiếu gặp lỗi, hệ thống hủy cả mã dùng một lần, phiếu và trạng thái đã bầu, nên không bị ghi dở. Database có ba role: `app_user` dùng cho luồng cử tri và ghi phiếu, `tally_user` dùng đọc phiếu để kiểm, còn `admin_app` theo quyền SQL chỉ đọc ứng viên. Tài khoản admin trên giao diện được so với cấu hình backend, không phải role `admin_app` và không có bảng admin.”
+**Em trình bày:** “Sơ đồ này cho thấy một phiếu đi từ cử tri qua backend vào database, rồi được đếm khi admin xem kết quả. Trình duyệt của SV001 đăng nhập rồi dùng private key cử tri ký phiếu. Backend kiểm chữ ký, mã hóa phiếu, dùng mô hình KMS vừa giới thiệu để bọc khóa AES và lưu dữ liệu vào PostgreSQL. Sau giờ kết thúc, admin yêu cầu kết quả; backend đọc phiếu, mở khóa AES, giải mã và chỉ trả tổng theo ứng viên. Phần quản lý khóa nằm ngay trong backend.”
 
 ## 3. Chuẩn bị cử tri và kích hoạt
 
