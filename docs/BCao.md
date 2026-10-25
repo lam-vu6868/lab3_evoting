@@ -128,7 +128,7 @@ sequenceDiagram
     CR-->>API: Phiếu rõ chứa ballot và sig_ballot
 ```
 
-**Em trình bày sơ đồ giải mã:** “Việc này chỉ diễn ra khi kiểm phiếu sau giờ kết thúc. Backend đọc bốn trường đã lưu trong `votes`. Private key của hệ thống mở `wrapped_dek` để lấy lại đúng DEK của phiếu này. AES-GCM dùng DEK, IV, `ciphertext` và `tag` để kiểm dữ liệu rồi giải mã. Nếu tag không khớp, hệ thống báo lỗi thay vì đếm một phiếu sai. Nếu hợp lệ, backend lấy lại `ballot`, thấy `candidate_id=2` và cộng một phiếu cho B. Phiếu rõ chỉ được xử lý trong bộ nhớ; admin chỉ nhận tổng số phiếu ở mục 8.”
+**Em trình bày sơ đồ giải mã:** “Việc này chỉ diễn ra khi kiểm phiếu sau giờ kết thúc. Backend đọc bốn trường đã lưu trong `votes`. Private key của hệ thống mở `wrapped_dek` để lấy lại đúng DEK của phiếu này. AES-GCM dùng DEK, IV, `ciphertext` và `tag` để kiểm dữ liệu rồi giải mã. Nếu tag không khớp, hệ thống báo lỗi thay vì đếm một phiếu sai. Nếu hợp lệ, backend lấy lại `ballot`, thấy `candidate_id=2` và cộng một phiếu cho B. Phiếu rõ chỉ được xử lý trong bộ nhớ; admin chỉ nhận tổng số phiếu ở mục 7.”
 
 **Em nói rõ về KMS:** “Cặp khóa RSA dùng để bọc và mở DEK thuộc module KMS mô phỏng trong backend. Đây không phải dịch vụ đứng riêng. Cặp khóa này được dùng lại, còn mỗi phiếu có DEK AES mới. Nếu mất private key KMS cũ thì không thể mở các phiếu cũ.”
 
@@ -144,35 +144,7 @@ sequenceDiagram
 
 **Code:** [crypto_service.py](../app/crypto/crypto_service.py), [kms.py](../app/crypto/kms.py), [voting_service.py](../app/voting/voting_service.py).
 
-## 7. Database ghi phiếu trong một transaction
-
-**Sơ đồ ghi phiếu và trả biên nhận:**
-
-```mermaid
-sequenceDiagram
-    participant WEB as Trình duyệt SV001
-    participant API as Backend
-    participant DB as PostgreSQL
-    Note over API,DB: Transaction bắt đầu trước khi kiểm tra yêu cầu
-    API->>DB: Khóa voter_status, kiểm chưa bầu
-    API->>DB: Ghi nonce vào used_nonces
-    Note over API: Mã hóa phiếu như sơ đồ 1 ở mục 6
-    API->>DB: Ghi bốn trường mã hóa vào votes
-    API->>DB: Ghi trạng thái đã bầu vào voter_status
-    alt Thành công
-        DB-->>API: Commit
-        API-->>WEB: Trả biên nhận
-    else Có lỗi
-        DB-->>API: Rollback
-        API-->>WEB: Báo lỗi
-    end
-```
-
-**Em trình bày:** “Backend khóa dòng `voter_status` để hai yêu cầu của SV001 gửi cùng lúc không thể cùng thành công. `used_nonces` chặn gửi lại yêu cầu cũ; `has_voted` chặn SV001 bầu lần hai dù dùng nonce mới. Sau khi mã hóa như mục 6, ba thay đổi phải thành công cùng nhau: ghi nonce, ghi phiếu mã hóa vào `votes`, và ghi trạng thái đã bầu vào `voter_status`. Bảng `votes` **không có cột `voter_id` hoặc `candidate_id` riêng**. Backend lưu chữ ký `sig_cast` và `receipt_hash` là SHA-256 của chữ ký đó, rồi trả bản hex làm biên nhận **sau commit**. Nếu một bước lỗi, tất cả thay đổi được rollback. Biên nhận hiện chưa có trang tra cứu và chưa chứng minh phiếu đã được tính vào kết quả cuối cùng.”
-
-**Code:** [vote.py](../app/voting/vote.py), [voting_service.py](../app/voting/voting_service.py), [init.sql](../db/init.sql).
-
-## 8. Hết giờ bầu cử: admin kiểm phiếu
+## 7. Hết giờ bầu cử: admin kiểm phiếu
 
 **Sơ đồ admin xem kết quả:**
 
@@ -199,13 +171,13 @@ sequenceDiagram
 
 **Code:** [admin.py](../app/auth/admin.py), [results.py](../app/voting/results.py), [tally.py](../app/voting/tally.py).
 
-## 9. Kiểm tra và giới hạn của hệ thống
+## 8. Kiểm tra và giới hạn của hệ thống
 
 **Em trình bày:** “Theo các checkpoint trong [ROADMAP.md](../ROADMAP.md), dự án đã thử với **dữ liệu giả và database thử nghiệm riêng**: mã kích hoạt sai; hai yêu cầu kích hoạt đồng thời; mật khẩu và JWT sai; chữ ký sai; nonce lặp; hai yêu cầu bỏ phiếu đồng thời chỉ một thành công; lỗi giữa transaction phải rollback; chặn xem kết quả trước giờ; và một luồng từ kích hoạt đến kết quả trong trình duyệt. Đây là kết quả của những trường hợp đã thử, không phải chứng nhận an toàn để bầu cử thật.”
 
 **Em nói rõ điều chưa làm:** “Private key cử tri trong browser và file sao lưu có thể lộ nếu thiết bị hoặc trang bị tấn công. Nhập khóa trên thiết bị mới chưa được kiểm chứng đầy đủ. Backend thấy lựa chọn trước mã hóa; KMS chưa tách khỏi backend; biên nhận chưa cho người dùng tự kiểm tra phiếu đã được tính đúng; chưa kiểm tải lớn và chưa có kiểm toán bảo mật độc lập.”
 
-## 10. Kết luận để đọc trước lớp
+## 9. Kết luận để đọc trước lớp
 
 **Em trình bày:** “Tóm lại, cử tri dùng **RSA-PSS** để ký, backend dùng **AES-256-GCM** để mã hóa phiếu và **RSA-OAEP của KMS** để bọc khóa AES. PostgreSQL dùng transaction và khóa dòng để phiếu hoặc được ghi đủ hoặc không ghi gì, đồng thời chặn bỏ phiếu hai lần. Sau khi kết thúc, backend giải mã trong RAM và chỉ trả tổng theo ứng viên. Mỗi lớp có một nhiệm vụ: chữ ký xác nhận nội dung, mã hóa bảo vệ phiếu lưu trữ, database lưu trạng thái và quyền. Hệ thống đáp ứng mục tiêu học tập, **chưa phải hệ thống bầu cử dùng thật**.”
 
