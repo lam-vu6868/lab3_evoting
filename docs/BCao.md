@@ -35,38 +35,17 @@ sequenceDiagram
 | Xác thực                | PBKDF2-HMAC-SHA256 với salt    | Lưu hash mật khẩu, cấp mã đăng nhập có hạn và kiểm role.   |
 | Phiếu và khóa           | RSA-PSS, AES-256-GCM, RSA-OAEP | Ký phiếu, mã hóa phiếu và bọc khóa AES.                    |
 
-**Sơ đồ một phiếu đi qua các thành phần:**
+**Em trình bày:** “Frontend gồm các trang HTML và JavaScript; backend FastAPI xử lý đăng nhập, bỏ phiếu và xem kết quả; PostgreSQL lưu dữ liệu. Trình duyệt dùng Web Crypto API để ký phiếu. Backend dùng AES-256-GCM mã hóa phiếu và RSA-OAEP theo mô hình KMS để bảo vệ khóa AES. Phần quản lý khóa nằm ngay trong backend.”
 
-```mermaid
-sequenceDiagram
-    participant CT as Trình duyệt cử tri
-    participant API as Backend FastAPI
-    participant DB as PostgreSQL
-    participant AD as Trình duyệt admin
-    CT->>API: Đăng nhập
-    API->>DB: Kiểm tra tài khoản
-    API-->>CT: Trả JWT
-    CT->>CT: Ký phiếu bằng private key cử tri
-    CT->>API: Gửi lựa chọn và chữ ký
-    API->>API: Kiểm chữ ký, mã hóa phiếu, bọc khóa AES
-    API->>DB: Lưu phiếu mã hóa và trạng thái đã bầu
-    AD->>API: Xem kết quả sau giờ kết thúc
-    API->>DB: Đọc phiếu mã hóa
-    API->>API: Mở khóa AES, giải mã và đếm phiếu
-    API-->>AD: Chỉ trả tổng theo ứng viên
-```
+## 3. Chuẩn bị cử tri, kích hoạt và đăng nhập
 
-**Em trình bày:** “Sơ đồ này cho thấy một phiếu đi từ cử tri qua backend vào database, rồi được đếm khi admin xem kết quả. Trình duyệt của SV001 đăng nhập rồi dùng private key cử tri ký phiếu. Backend kiểm chữ ký, mã hóa phiếu, dùng mô hình KMS vừa giới thiệu để bọc khóa AES và lưu dữ liệu vào PostgreSQL. Sau giờ kết thúc, admin yêu cầu kết quả; backend đọc phiếu, mở khóa AES, giải mã và chỉ trả tổng theo ứng viên. Phần quản lý khóa nằm ngay trong backend.”
-
-## 3. Chuẩn bị cử tri và kích hoạt
-
-**Sơ đồ kích hoạt SV001:**
+**Sơ đồ kích hoạt và đăng nhập của SV001:**
 
 ```mermaid
 sequenceDiagram
     participant NV as Người vận hành
     participant WEB as Trình duyệt SV001
-    participant API as POST /activate
+    participant API as Backend FastAPI
     participant DB as PostgreSQL
     NV->>DB: Seed SV001 với hash mã kích hoạt
     Note over DB: voters.activated = false
@@ -81,13 +60,16 @@ sequenceDiagram
         DB-->>API: Commit
         API-->>WEB: success = true
         WEB->>WEB: Cử tri có thể bấm tải file private key
+        WEB->>API: Sau đó tự đăng nhập bằng voter_id và mật khẩu
+        API->>DB: Đọc voters, kiểm hash mật khẩu
+        API-->>WEB: Trả JWT role voter và election_id
     else Thông tin không hợp lệ
         API-->>WEB: Báo lỗi, không ghi public key vào DB
     end
     Note over WEB: Khóa được tạo trước khi server xác nhận mã đúng
 ```
 
-**Em trình bày:** “Trước hết, script `seed_voters.py` thêm `SV001` vào bảng `voters`. Database chỉ lưu **hash của mã kích hoạt**, không lưu mã nguyên bản. Khi SV001 điền form và bấm nút, trình duyệt tạo hai khóa: private key để cử tri ký về sau, public key để backend kiểm chữ ký. Hai khóa được lưu trong `localStorage`, nhưng request chỉ gửi public key. Backend kiểm mã kích hoạt có thuộc SV001 không, kiểm khóa công khai, khóa dòng cử tri để tránh kích hoạt đồng thời, rồi lưu `password_hash`, `salt`, `public_key`, đặt `activated=true` và thêm dòng `voter_status` với `has_voted=false`. Chỉ sau commit mới báo kích hoạt thành công.”
+**Em trình bày:** “Trước hết, script `seed_voters.py` thêm `SV001` vào bảng `voters`. Database chỉ lưu **hash của mã kích hoạt**, không lưu mã nguyên bản. Khi SV001 điền form và bấm nút, trình duyệt tạo hai khóa: private key để cử tri ký về sau, public key để backend kiểm chữ ký. Hai khóa được lưu trong `localStorage`, nhưng request chỉ gửi public key. Backend kiểm mã kích hoạt có thuộc SV001 không, kiểm khóa công khai, khóa dòng cử tri để tránh kích hoạt đồng thời, rồi lưu `password_hash`, `salt`, `public_key`, đặt `activated=true` và thêm dòng `voter_status` với `has_voted=false`. Chỉ sau commit mới báo kích hoạt thành công. Sau đó SV001 tự đăng nhập bằng mật khẩu để nhận JWT.”
 
 **Em nhấn mạnh:** “Khóa được tạo **sau khi bấm nút**, nhưng **trước khi server xác nhận mã kích hoạt đúng**. Nếu mã sai, public key không vào database; khóa đã tạo vẫn ở trình duyệt để thử lại. Mật khẩu tối thiểu 8 **ký tự**, không bắt buộc 8 chữ số.”
 
@@ -97,25 +79,6 @@ sequenceDiagram
 
 ## 4. Đăng nhập và xem ứng viên
 
-**Sơ đồ đăng nhập:**
-
-```mermaid
-sequenceDiagram
-    participant WEB as Trình duyệt SV001
-    participant API as FastAPI
-    participant DB as PostgreSQL
-    WEB->>API: POST /login với voter_id và mật khẩu
-    API->>DB: Đọc voters của SV001
-    DB-->>API: activated, password_hash, salt
-    API->>API: Kiểm mật khẩu và tạo JWT role voter
-    API-->>WEB: JWT và election_id
-    WEB->>WEB: Lưu trong sessionStorage
-    WEB->>API: GET /candidates
-    API->>DB: Đọc bảng candidates
-    DB-->>API: Danh sách ứng viên A, B, C
-    API-->>WEB: Hiển thị lựa chọn trên vote.html
-```
-
 **Em trình bày:** “Đăng nhập chỉ **đọc** bảng `voters`. Backend kiểm tài khoản đã kích hoạt và mật khẩu khớp hash. Nếu đúng, backend cấp JWT: một mã dùng để chứng minh các request sau thuộc phiên đăng nhập của SV001. JWT được ký HS256 để phát hiện nội dung bị sửa, nhưng **không được mã hóa**, nên không chứa mật khẩu hoặc private key. Token mặc định hết hạn sau 60 phút và được lưu trong `sessionStorage`. Trang bỏ phiếu gọi `/candidates` để đọc danh sách ứng viên. Đăng nhập hay xem ứng viên đều chưa ghi phiếu.”
 
 **Nếu thầy hỏi về JWT bị lộ:** “Người có JWT còn hạn có thể gọi API như phiên đã đăng nhập. Nhưng chỉ JWT chưa đủ bỏ phiếu hợp lệ; phải có private key cử tri để tạo chữ ký. Đăng xuất xóa JWT trên trình duyệt hiện tại, không thu hồi bản token đã bị lấy cắp trước khi hết hạn.”
@@ -124,13 +87,13 @@ sequenceDiagram
 
 ## 5. Cử tri ký hai nội dung trước khi gửi
 
-**Sơ đồ ký phiếu chọn B:**
+**Sơ đồ ký và kiểm phiếu chọn B:**
 
 ```mermaid
 sequenceDiagram
     participant CT as Cử tri SV001
     participant WEB as vote.js và crypto.js
-    participant API as POST /vote
+    participant API as Backend POST /vote
     participant DB as PostgreSQL
     CT->>WEB: Chọn B rồi bấm Ký và gửi phiếu
     WEB->>WEB: Nạp private key SV001 đã có
@@ -141,9 +104,15 @@ sequenceDiagram
     WEB->>WEB: RSA-PSS ký ballot thành sig_ballot
     WEB->>WEB: RSA-PSS ký cast thành sig_cast
     WEB->>API: Gửi ballot, hai chữ ký và JWT
-    API->>DB: Lấy public key của SV001 trong voters
-    DB-->>API: Public key cử tri
-    API->>API: Dựng lại cast và kiểm cả hai chữ ký
+    API->>API: Kiểm JWT role voter, giờ bầu và ts
+    API->>DB: Đọc SV001, public key và ứng viên B
+    DB-->>API: Thông tin cử tri và ứng viên
+    API->>API: Dựng lại cast, kiểm hai chữ ký RSA-PSS
+    alt Thông tin và chữ ký hợp lệ
+        Note over API: Tiếp tục khóa dòng và ghi phiếu trong cùng request
+    else Có thông tin hoặc chữ ký sai
+        API-->>WEB: Từ chối phiếu
+    end
 ```
 
 **Em trình bày:** “Khi SV001 chọn B và bấm gửi, browser tạo `ballot`, nghĩa là nội dung lựa chọn ứng viên 2. Browser còn tạo `cast`, nghĩa là SV001 xác nhận **hành động gửi phiếu cho cuộc bầu cử này**. `nonce` là mã ngẫu nhiên chỉ dùng một lần; `ts` là thời gian Unix tính theo giây. Hai nội dung dùng cùng nonce và ts. Browser dùng private key của SV001 và RSA-PSS ký riêng từng nội dung. Backend dùng public key đã lưu để kiểm. Nếu ai sửa lựa chọn B thành A, chữ ký ballot không còn khớp. Nếu ai chỉ lấy được JWT mà không có private key, họ không tạo được hai chữ ký hợp lệ.”
@@ -154,74 +123,7 @@ sequenceDiagram
 
 ## 6. Backend kiểm tra rồi mã hóa phiếu
 
-**Sơ đồ kiểm tra trước khi ghi:**
-
-```mermaid
-sequenceDiagram
-    participant WEB as Trình duyệt SV001
-    participant API as FastAPI /vote
-    participant DB as PostgreSQL
-    WEB->>API: Gửi phiếu và JWT
-    API->>API: Kiểm role, giờ bầu, ts
-    API->>DB: Đọc SV001 và ứng viên B
-    DB-->>API: Tài khoản và ứng viên
-    API->>API: Kiểm hai chữ ký RSA-PSS
-    API->>DB: SELECT voter_status FOR UPDATE
-    DB-->>API: has_voted = false?
-    alt SV001 chưa bầu
-        API->>DB: INSERT nonce từ browser vào used_nonces
-        alt Nonce chưa từng dùng
-            DB-->>API: Cho phép tiếp tục mã hóa và ghi phiếu
-        else Nonce trùng
-            DB-->>API: Báo lỗi, transaction rollback
-        end
-    else SV001 đã bầu
-        API-->>WEB: Từ chối bầu lần hai
-    end
-```
-
 **Em trình bày:** “Backend kiểm thời gian, cử tri, ứng viên và cả hai chữ ký. Nó khóa dòng `voter_status` của SV001 bằng `FOR UPDATE` và kiểm `has_voted=false`, vì hai request gửi cùng lúc không được cùng thành công. Nonce đã dùng bị database từ chối. Nonce chặn **gửi lại cùng yêu cầu cũ**; `has_voted` chặn **SV001 dùng nonce mới để bầu lần hai**.”
-
-**Sơ đồ mã hóa và bọc khóa — phần cần chỉ chậm theo từng mũi tên:**
-
-```mermaid
-sequenceDiagram
-    participant API as voting_service.py
-    participant CR as crypto_service.py
-    participant KMS as KMS mô phỏng
-    participant DB as Bảng votes
-    API->>API: Gói ballot chọn B và sig_ballot thành plaintext
-    Note over API: Backend thấy lựa chọn B trước khi mã hóa
-    API->>CR: encrypt_vote(plaintext, kms)
-    CR->>CR: Tạo DEK AES mới 32 byte và IV 12 byte
-    CR->>CR: AES-256-GCM tạo ciphertext và tag 16 byte
-    CR->>KMS: wrap_dek(DEK) bằng public key RSA-OAEP
-    KMS-->>CR: wrapped_dek
-    CR-->>API: ciphertext, wrapped_dek, iv, tag
-    API->>DB: INSERT vote_id và bốn trường mã hóa
-    Note over DB: Không lưu DEK gốc hoặc phiếu rõ
-```
-
-**Sơ đồ KMS mô phỏng có khóa từ đâu:**
-
-```mermaid
-sequenceDiagram
-    participant API as Backend khởi động
-    participant KMS as KMS mô phỏng
-    participant FS as Thư mục khóa KMS
-    API->>KMS: ensure_keys()
-    KMS->>FS: Kiểm tra cặp RSA của hệ thống
-    alt Chưa có cả hai file khóa
-        KMS->>FS: Tạo private_key.pem và public_key.pem
-    else Private key đã có
-        FS-->>KMS: Nạp private key cũ, phục hồi public key nếu cần
-    else Còn public key nhưng mất private key
-        KMS-->>API: Báo lỗi, không tạo khóa thay thế
-    end
-    Note over KMS,FS: Khóa KMS được dùng lại qua các lần khởi động
-    API->>KMS: Khi bỏ phiếu, dùng public key bọc DEK
-    API->>KMS: Khi kiểm phiếu, dùng private key mở DEK
-```
 
 **Em nói rõ:** “KMS ở bài này là module quản lý khóa mô phỏng trong backend, lưu cặp RSA trong thư mục cấu hình. Nó không phải dịch vụ KMS độc lập và **không tạo cặp khóa mới cho mỗi phiếu**. Mỗi phiếu chỉ có **DEK AES mới**. Nếu làm mất private key KMS cũ thì không mở được DEK của các phiếu cũ.”
 
@@ -241,19 +143,21 @@ sequenceDiagram
 
 ## 7. Database ghi phiếu trong một transaction
 
-**Sơ đồ ghi và trả biên nhận:**
+**Sơ đồ mã hóa, ghi phiếu và trả biên nhận:**
 
 ```mermaid
 sequenceDiagram
     participant WEB as Trình duyệt SV001
     participant API as POST /vote
     participant DB as PostgreSQL
-    API->>DB: BEGIN trước các bước kiểm tra và ghi phiếu
-    API->>DB: Đọc cử tri, ứng viên và khóa dòng trạng thái
-    API->>DB: INSERT used_nonces với nonce
-    API->>API: Mã hóa phiếu và bọc DEK
-    API->>DB: INSERT votes với bốn trường mã hóa
-    API->>DB: UPDATE voter_status với has_voted, sig_cast, receipt_hash
+    Note over API,DB: Transaction đã bắt đầu trước bước kiểm tra ở sơ đồ trên
+    API->>DB: Khóa dòng voter_status, kiểm has_voted
+    API->>DB: Ghi nonce vào used_nonces
+    API->>API: Gói ballot và sig_ballot, tạo DEK và IV mới
+    API->>API: AES-256-GCM tạo ciphertext và tag
+    API->>API: RSA-OAEP bọc DEK thành wrapped_dek
+    API->>DB: Ghi ciphertext, wrapped_dek, iv, tag vào votes
+    API->>DB: Ghi has_voted, sig_cast, receipt_hash vào voter_status
     alt Mọi bước thành công
         DB-->>API: COMMIT
         API-->>WEB: success và receipt dạng hex
@@ -264,25 +168,6 @@ sequenceDiagram
 ```
 
 **Em trình bày:** “Ba thay đổi này phải thành công cùng nhau. `used_nonces` chặn dùng lại nonce. `votes` chứa phiếu mã hóa và **không có cột `voter_id` hoặc `candidate_id` riêng**. `voter_status` ghi SV001 đã bỏ phiếu và lưu chữ ký `sig_cast`. Backend tính `receipt_hash` là SHA-256 của bytes chữ ký `sig_cast`, lưu hash đó rồi trả bản hex làm biên nhận **sau commit**. `receipt_hash` có thể tính lại từ `sig_cast`; hệ thống hiện chưa có trang tra cứu biên nhận và nó chưa chứng minh phiếu đã được tính vào kết quả cuối cùng.”
-
-**Sơ đồ dữ liệu được đọc hoặc ghi ở năm bảng:**
-
-```mermaid
-sequenceDiagram
-    participant API as FastAPI
-    participant V as voters
-    participant C as candidates
-    participant S as voter_status
-    participant N as used_nonces
-    participant P as votes
-    API->>V: Đọc SV001, public key và trạng thái kích hoạt
-    API->>C: Kiểm ứng viên B tồn tại
-    API->>S: Khóa dòng SV001 và kiểm has_voted
-    API->>N: Ghi nonce chưa dùng
-    API->>P: Ghi ciphertext, wrapped_dek, iv, tag
-    API->>S: Ghi has_voted, sig_cast, receipt_hash
-    Note over P: votes không có cột voter_id
-```
 
 **Code:** [vote.py](../app/voting/vote.py), [voting_service.py](../app/voting/voting_service.py), [init.sql](../db/init.sql).
 
@@ -295,8 +180,6 @@ sequenceDiagram
     participant AD as Admin
     participant API as GET /results
     participant DB as PostgreSQL tally_user
-    participant KMS as KMS mô phỏng
-    participant CR as AES-256-GCM
     AD->>API: Gửi JWT role admin
     alt Chưa đến giờ kết thúc
         API-->>AD: Từ chối xem kết quả
@@ -304,10 +187,8 @@ sequenceDiagram
         API->>DB: Đọc candidates và votes
         DB-->>API: Danh sách phiếu mã hóa
         loop Với mỗi phiếu
-            API->>KMS: Dùng private key mở wrapped_dek
-            KMS-->>API: DEK gốc
-            API->>CR: Giải mã ciphertext với DEK, iv, tag
-            CR-->>API: ballot và sig_ballot
+            API->>API: RSA-OAEP dùng private key hệ thống mở wrapped_dek
+            API->>API: AES-256-GCM giải mã với DEK, iv, tag
             API->>API: candidate_id = 2 thì cộng 1 cho B
         end
         API-->>AD: Chỉ trả tổng theo ứng viên và total_votes
