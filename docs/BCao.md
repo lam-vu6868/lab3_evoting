@@ -97,7 +97,26 @@ sequenceDiagram
 
 ## 6. Backend kiểm tra rồi mã hóa phiếu
 
-**Em trình bày:** “Backend kiểm thời gian, cử tri, ứng viên và cả hai chữ ký. Nó khóa dòng `voter_status` của SV001 bằng `FOR UPDATE` và kiểm `has_voted=false`, vì hai request gửi cùng lúc không được cùng thành công. Nonce đã dùng bị database từ chối. Nonce chặn **gửi lại cùng yêu cầu cũ**; `has_voted` chặn **SV001 dùng nonce mới để bầu lần hai**.”
+**Sơ đồ backend kiểm tra và mã hóa phiếu:**
+
+```mermaid
+sequenceDiagram
+    participant API as Backend bỏ phiếu
+    participant DB as PostgreSQL
+    participant CR as Mã hóa trong backend
+    API->>API: Kiểm giờ, SV001, ứng viên B và hai chữ ký
+    API->>DB: Khóa trạng thái, kiểm SV001 chưa bầu
+    API->>DB: Ghi nonce chưa dùng
+    API->>API: Gói ballot và sig_ballot
+    API->>CR: Chuyển dữ liệu phiếu rõ để mã hóa
+    CR->>CR: Tạo DEK và IV, AES-GCM mã hóa phiếu
+    CR->>CR: RSA-OAEP bọc DEK bằng public key hệ thống
+    CR-->>API: ciphertext, wrapped_dek, iv, tag
+```
+
+**Em trình bày:** “Em đọc sơ đồ từ trên xuống. Backend nhận phiếu SV001 chọn B, kiểm thời gian bỏ phiếu, tài khoản, ứng viên và hai chữ ký. Nếu bước nào sai thì dừng và báo lỗi. Nếu hợp lệ, backend khóa dòng trạng thái để kiểm SV001 chưa bầu, rồi ghi nonce; nonce cũ sẽ bị database từ chối. Tiếp theo backend gói `ballot` với `sig_ballot` thành dữ liệu phiếu rõ. Phần mã hóa trong chính backend tạo khóa AES mới là DEK và IV mới cho phiếu này. AES-GCM biến phiếu rõ thành `ciphertext` và `tag`; RSA-OAEP dùng public key của hệ thống bọc DEK thành `wrapped_dek`. Bốn giá trị `ciphertext`, `wrapped_dek`, `iv`, `tag` được chuyển sang bước lưu phiếu ở sơ đồ sau. DEK gốc không được lưu vào database.”
+
+**Chống bỏ phiếu lặp:** “Khóa dòng `voter_status` bằng `FOR UPDATE` khiến hai yêu cầu của SV001 gửi cùng lúc không thể cùng thành công. Nonce chặn **gửi lại cùng yêu cầu cũ**; `has_voted` chặn **SV001 dùng nonce mới để bầu lần hai**.”
 
 **Em nói rõ:** “KMS ở bài này là module quản lý khóa mô phỏng trong backend, lưu cặp RSA trong thư mục cấu hình. Nó không phải dịch vụ KMS độc lập và **không tạo cặp khóa mới cho mỗi phiếu**. Mỗi phiếu chỉ có **DEK AES mới**. Nếu làm mất private key KMS cũ thì không mở được DEK của các phiếu cũ.”
 
@@ -124,11 +143,9 @@ sequenceDiagram
     participant WEB as Trình duyệt SV001
     participant API as Backend
     participant DB as PostgreSQL
-    Note over API,DB: Một transaction cho toàn bộ lần bỏ phiếu
-    API->>DB: Khóa trạng thái và ghi nonce nếu chưa bầu
-    API->>API: Tạo DEK và IV, AES-GCM mã hóa phiếu
-    API->>API: RSA-OAEP bọc DEK
-    API->>DB: Ghi phiếu mã hóa và trạng thái đã bầu
+    Note over API,DB: Tiếp tục transaction trên, nonce đã được ghi
+    API->>DB: Ghi bốn trường mã hóa vào votes
+    API->>DB: Ghi trạng thái đã bầu vào voter_status
     alt Thành công
         DB-->>API: Commit
         API-->>WEB: Trả biên nhận
