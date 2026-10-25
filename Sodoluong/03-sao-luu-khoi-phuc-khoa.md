@@ -10,7 +10,7 @@
 
 ## Nhập lại bản sao
 
-1. Cử tri chọn file PKCS8 PEM trên trang kích hoạt hoặc trang bỏ phiếu. `importPrivateKeyPem()` kiểm tra cấu trúc PEM/Base64, nạp khóa RSA-PSS và yêu cầu RSA 2048, exponent 65537.
+1. Sau khi đăng nhập, cử tri chọn file PKCS8 PEM trên trang bỏ phiếu. `importPrivateKeyPem()` kiểm tra cấu trúc PEM/Base64, nạp khóa RSA-PSS và yêu cầu RSA 2048, exponent 65537.
 2. Giao diện chỉ gọi `savePrivateKey("SV001", key)` nếu chưa có khóa riêng cho `SV001` trên thiết bị; nó không tự ghi đè khóa đang có. Khóa được lưu lại vào `localStorage` của trình duyệt hiện tại. **Không có lời gọi API hoặc ghi DB khi nhập file.**
 3. Khi bỏ phiếu, `signPayload()` dùng khóa vừa nhập để ký. Backend dùng `voters.public_key` của `SV001` để xác minh chữ ký. File nhập sai tài khoản có thể vượt qua bước kiểm tra định dạng ở trình duyệt, nhưng chữ ký sẽ bị từ chối khi gửi phiếu.
 
