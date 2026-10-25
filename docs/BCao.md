@@ -8,33 +8,30 @@
 
 ```mermaid
 sequenceDiagram
-    participant NV as Người vận hành
     participant CT as Cử tri SV001
-    participant API as FastAPI
-    participant DB as PostgreSQL
+    participant HT as Hệ thống
+    participant DB as Database
     participant AD as Admin
-    NV->>DB: Nạp SV001 và hash mã kích hoạt
-    CT->>API: Kích hoạt rồi đăng nhập
-    API->>DB: Lưu tài khoản và đọc thông tin cử tri
-    CT->>API: Ký và gửi phiếu chọn B
-    API->>DB: Ghi phiếu mã hóa trong một transaction
-    AD->>API: Xin xem kết quả sau giờ kết thúc
-    API->>DB: Đọc phiếu để kiểm đếm
-    API-->>AD: Chỉ trả tổng phiếu theo ứng viên
+    CT->>HT: Kích hoạt và đăng nhập
+    CT->>HT: Chọn B và gửi phiếu
+    HT->>DB: Kiểm tra và lưu phiếu đã mã hóa
+    AD->>HT: Yêu cầu kết quả sau giờ kết thúc
+    HT->>DB: Đọc phiếu để đếm
+    HT-->>AD: Trả tổng phiếu theo ứng viên
 ```
 
-**Em trình bày:** “Đề tài của em là một hệ thống bầu cử điện tử bản demo. Người vận hành nạp sẵn cử tri và cấp mã kích hoạt; người lạ không thể tự tạo tài khoản. Cử tri đăng nhập, chọn ứng viên, ký và gửi một phiếu. Backend kiểm tra để mỗi cử tri chỉ bầu một lần. Kết quả chỉ được xem sau thời điểm kết thúc. Em sẽ giải thích cả hệ thống bằng ví dụ `SV001` chọn ứng viên B.”
+**Em trình bày:** “Đây là sơ đồ tổng quan của bản demo; em xin đọc từ trên xuống. Đầu tiên, cử tri SV001 kích hoạt tài khoản và đăng nhập. Tiếp theo, SV001 chọn ứng viên B rồi gửi phiếu. Hệ thống kiểm tra và lưu phiếu dưới dạng đã mã hóa trong database. Sau khi cuộc bầu cử kết thúc, admin yêu cầu xem kết quả; hệ thống đọc các phiếu để đếm và chỉ trả tổng theo ứng viên. Ở các sơ đồ sau, em sẽ giải thích từng bước này diễn ra như thế nào.”
 
 ## 2. Công nghệ và nhiệm vụ của từng phần
 
-| Phần | Công nghệ | Công việc |
-| --- | --- | --- |
-| Giao diện | HTML, CSS, JavaScript trong `static/` | Bốn trang: kích hoạt, đăng nhập, bỏ phiếu, quản trị. |
-| Mật mã trên trình duyệt | Web Crypto API | Tạo cặp khóa RSA-PSS của cử tri và ký trước khi gửi phiếu. |
-| Backend | Python, FastAPI, Uvicorn, Pydantic | Nhận API, kiểm JSON, xác thực và thực hiện nghiệp vụ. |
-| Database | PostgreSQL, SQLAlchemy async, `asyncpg` | Lưu năm bảng; transaction và khóa dòng chống bầu đồng thời. |
-| Xác thực | PBKDF2-HMAC-SHA256 với salt, JWT ký HS256 | Lưu hash mật khẩu, cấp mã đăng nhập có hạn và kiểm role. |
-| Phiếu và khóa | RSA-PSS, AES-256-GCM, RSA-OAEP | Ký phiếu, mã hóa phiếu và bọc khóa AES. |
+| Phần                    | Công nghệ                                 | Công việc                                                   |
+| ----------------------- | ----------------------------------------- | ----------------------------------------------------------- |
+| Giao diện               | HTML, CSS, JavaScript trong `static/`     | Bốn trang: kích hoạt, đăng nhập, bỏ phiếu, quản trị.        |
+| Mật mã trên trình duyệt | Web Crypto API                            | Tạo cặp khóa RSA-PSS của cử tri và ký trước khi gửi phiếu.  |
+| Backend                 | Python, FastAPI,                          | Nhận API, kiểm JSON, xác thực và thực hiện nghiệp vụ.       |
+| Database                | PostgreSQL, SQLAlchemy                    | Lưu dữ liệu bầu cử; ngăn một cử tri gửi thành công hai phiếu cùng lúc. |
+| Xác thực                | PBKDF2-HMAC-SHA256 với salt, JWT ký HS256 | Lưu hash mật khẩu, cấp mã đăng nhập có hạn và kiểm role.    |
+| Phiếu và khóa           | RSA-PSS, AES-256-GCM, RSA-OAEP            | Ký phiếu, mã hóa phiếu và bọc khóa AES.                     |
 
 **Sơ đồ các thành phần trao đổi:**
 
@@ -55,7 +52,7 @@ sequenceDiagram
     Note over API,KMS: KMS là module trong backend, không phải dịch vụ riêng
 ```
 
-**Em trình bày:** “Frontend có bốn trang, backend FastAPI có sáu API. Docker hiện chỉ chạy PostgreSQL; backend chạy local. Database có ba role: `app_user` dùng cho luồng cử tri và ghi phiếu, `tally_user` dùng đọc phiếu để kiểm, còn `admin_app` theo quyền SQL chỉ đọc ứng viên. Tài khoản admin trên giao diện được so với cấu hình backend, không phải role `admin_app` và không có bảng admin.”
+**Em trình bày:** “Frontend có bốn trang, backend FastAPI có sáu API. Docker hiện chỉ chạy PostgreSQL; backend chạy local. Ví dụ, nếu SV001 bấm gửi phiếu hai lần rất nhanh, yêu cầu thứ hai phải chờ; khi được xử lý, nó thấy SV001 đã bầu và bị từ chối. Nếu quá trình ghi phiếu gặp lỗi, hệ thống hủy cả mã dùng một lần, phiếu và trạng thái đã bầu, nên không bị ghi dở. Database có ba role: `app_user` dùng cho luồng cử tri và ghi phiếu, `tally_user` dùng đọc phiếu để kiểm, còn `admin_app` theo quyền SQL chỉ đọc ứng viên. Tài khoản admin trên giao diện được so với cấu hình backend, không phải role `admin_app` và không có bảng admin.”
 
 ## 3. Chuẩn bị cử tri và kích hoạt
 
@@ -226,13 +223,13 @@ sequenceDiagram
 
 **Em trình bày:** “Backend gói `ballot` và `sig_ballot` thành dữ liệu phiếu. Nó tạo một **khóa AES mới 32 byte cho riêng phiếu này**, gọi là DEK, và một IV ngẫu nhiên 12 byte. AES-256-GCM dùng DEK và IV biến phiếu rõ thành `ciphertext`, tức dữ liệu không đọc trực tiếp được. Thuật toán còn tạo `tag` 16 byte để khi giải mã có thể phát hiện dữ liệu bị sửa hoặc dùng sai khóa. Nhưng nếu lưu DEK gốc cạnh phiếu thì người đọc database có thể mở phiếu. Vì vậy public key của KMS mô phỏng dùng RSA-OAEP bọc DEK thành `wrapped_dek`. Database chỉ lưu khóa đã bọc.”
 
-| Cột trong `votes` | Có tác dụng gì? |
-| --- | --- |
-| `vote_id` | ID ngẫu nhiên của dòng phiếu. |
-| `ciphertext` | Phiếu đã AES mã hóa; không đọc trực tiếp được lựa chọn B. |
-| `wrapped_dek` | Khóa AES đã được public key KMS bọc bằng RSA-OAEP. |
-| `iv` | 12 byte dùng cho đúng lần mã hóa này; cần lại để giải mã, không phải bí mật. |
-| `tag` | 16 byte dùng kiểm dữ liệu hoặc khóa có sai/bị sửa không. |
+| Cột trong `votes` | Có tác dụng gì?                                                              |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `vote_id`         | ID ngẫu nhiên của dòng phiếu.                                                |
+| `ciphertext`      | Phiếu đã AES mã hóa; không đọc trực tiếp được lựa chọn B.                    |
+| `wrapped_dek`     | Khóa AES đã được public key KMS bọc bằng RSA-OAEP.                           |
+| `iv`              | 12 byte dùng cho đúng lần mã hóa này; cần lại để giải mã, không phải bí mật. |
+| `tag`             | 16 byte dùng kiểm dữ liệu hoặc khóa có sai/bị sửa không.                     |
 
 **Em giải thích ba thuật toán:** “**RSA-PSS** dùng cặp khóa của **cử tri** để ký và kiểm chữ ký. **AES-256-GCM** dùng DEK để mã hóa nội dung phiếu. **RSA-OAEP** dùng cặp khóa của **KMS** để bảo vệ DEK. Hai cặp RSA khác nhau: private key cử tri ở trình duyệt, private key KMS ở backend. Backend **thấy lựa chọn B trước khi mã hóa**; đây là giới hạn của bản demo.”
 
