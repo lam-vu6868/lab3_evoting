@@ -5,7 +5,7 @@
 ## 1. Công nghệ và nhiệm vụ của từng phần
 
 | Phần                    | Công nghệ                      | Công việc                                                  |
-| ----------------------- | ------------------------------ | ---------------------------------------------------------- |
+| ----------------------- | ------------------------------ | ---------------------------------------------------------- | 
 | Giao diện               | HTML, CSS, JavaScript          | Bốn trang: kích hoạt, đăng nhập, bỏ phiếu, quản trị.       |
 | Mật mã trên trình duyệt | Web Crypto API                 | Tạo cặp khóa RSA-PSS của cử tri và ký trước khi gửi phiếu. |
 | Backend                 | Python, FastAPI                | Nhận API, kiểm JSON, xác thực và thực hiện nghiệp vụ.      |
