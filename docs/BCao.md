@@ -2,7 +2,20 @@
 
 **Hệ thống dùng mô hình gì?** Hệ thống mô phỏng mô hình **KMS (Key Management System, hệ thống quản lý khóa)** để bảo vệ khóa mã hóa phiếu. Mỗi phiếu có một khóa AES riêng gọi là DEK. Backend dùng public key của cặp khóa KMS để bọc DEK trước khi lưu vào database; khi kiểm phiếu, private key của cặp khóa đó mở DEK để giải mã. Trong bài này, KMS là module và thư mục khóa **nằm trong backend**, chưa phải dịch vụ độc lập. Việc xác thực cử tri là luồng khác: mã kích hoạt, mật khẩu, JWT và chữ ký RSA-PSS.
 
-## 1. Mục tiêu của đề tài
+## 1. Công nghệ và nhiệm vụ của từng phần
+
+| Phần                    | Công nghệ                      | Công việc                                                  |
+| ----------------------- | ------------------------------ | ---------------------------------------------------------- |
+| Giao diện               | HTML, CSS, JavaScript          | Bốn trang: kích hoạt, đăng nhập, bỏ phiếu, quản trị.       |
+| Mật mã trên trình duyệt | Web Crypto API                 | Tạo cặp khóa RSA-PSS của cử tri và ký trước khi gửi phiếu. |
+| Backend                 | Python, FastAPI                | Nhận API, kiểm JSON, xác thực và thực hiện nghiệp vụ.      |
+| Database                | PostgreSQL, SQLAlchemy         | Lưu dữ liệu bầu cử                                         |
+| Xác thực                | PBKDF2-HMAC-SHA256 với salt    | Lưu hash mật khẩu, cấp mã đăng nhập có hạn và kiểm role.   |
+| Phiếu và khóa           | RSA-PSS, AES-256-GCM, RSA-OAEP | Ký phiếu, mã hóa phiếu và bọc khóa AES.                    |
+
+**trình bày:** “Frontend gồm các trang HTML và JavaScript; backend FastAPI xử lý đăng nhập, bỏ phiếu và xem kết quả; PostgreSQL lưu dữ liệu. Trình duyệt dùng Web Crypto API để ký phiếu. Backend dùng AES-256-GCM mã hóa phiếu và RSA-OAEP theo mô hình KMS để bảo vệ khóa AES. Phần quản lý khóa nằm ngay trong backend.”
+
+## 2. Mục tiêu của đề tài
 
 **Sơ đồ tổng quan:**
 
@@ -21,19 +34,6 @@ sequenceDiagram
 ```
 
 **trình bày:** “Đây là sơ đồ tổng quan của hệ thống; em xin đọc từ trên xuống. Đầu tiên, cử tri SV001 kích hoạt tài khoản và đăng nhập. Tiếp theo, SV001 chọn ứng viên B rồi gửi phiếu. Hệ thống kiểm tra và lưu phiếu dưới dạng đã mã hóa trong database. Sau khi cuộc bầu cử kết thúc, admin yêu cầu xem kết quả; hệ thống đọc các phiếu để đếm và chỉ trả tổng theo ứng viên. Ở các sơ đồ sau, em sẽ giải thích từng bước này diễn ra như thế nào.”
-
-## 2. Công nghệ và nhiệm vụ của từng phần
-
-| Phần                    | Công nghệ                      | Công việc                                                  |
-| ----------------------- | ------------------------------ | ---------------------------------------------------------- |
-| Giao diện               | HTML, CSS, JavaScript          | Bốn trang: kích hoạt, đăng nhập, bỏ phiếu, quản trị.       |
-| Mật mã trên trình duyệt | Web Crypto API                 | Tạo cặp khóa RSA-PSS của cử tri và ký trước khi gửi phiếu. |
-| Backend                 | Python, FastAPI                | Nhận API, kiểm JSON, xác thực và thực hiện nghiệp vụ.      |
-| Database                | PostgreSQL, SQLAlchemy         | Lưu dữ liệu bầu cử                                         |
-| Xác thực                | PBKDF2-HMAC-SHA256 với salt    | Lưu hash mật khẩu, cấp mã đăng nhập có hạn và kiểm role.   |
-| Phiếu và khóa           | RSA-PSS, AES-256-GCM, RSA-OAEP | Ký phiếu, mã hóa phiếu và bọc khóa AES.                    |
-
-**trình bày:** “Frontend gồm các trang HTML và JavaScript; backend FastAPI xử lý đăng nhập, bỏ phiếu và xem kết quả; PostgreSQL lưu dữ liệu. Trình duyệt dùng Web Crypto API để ký phiếu. Backend dùng AES-256-GCM mã hóa phiếu và RSA-OAEP theo mô hình KMS để bảo vệ khóa AES. Phần quản lý khóa nằm ngay trong backend.”
 
 ## 3. Chuẩn bị cử tri, kích hoạt và đăng nhập
 
