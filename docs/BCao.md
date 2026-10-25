@@ -95,32 +95,42 @@ sequenceDiagram
 
 **Code:** [vote.js](../static/js/vote.js), [signature_service.py](../app/crypto/signature_service.py), [voting_service.py](../app/voting/voting_service.py).
 
-## 6. Backend kiểm tra rồi mã hóa phiếu
+## 6. Hệ thống mã hóa và giải mã phiếu như thế nào?
 
-**Sơ đồ backend kiểm tra và mã hóa phiếu:**
+**Sơ đồ 1 — Mã hóa phiếu khi SV001 bỏ phiếu:**
 
 ```mermaid
 sequenceDiagram
     participant API as Backend bỏ phiếu
-    participant DB as PostgreSQL
-    participant CR as Mã hóa trong backend
-    API->>API: Kiểm giờ, SV001, ứng viên B và hai chữ ký
-    API->>DB: Khóa trạng thái, kiểm SV001 chưa bầu
-    API->>DB: Ghi nonce chưa dùng
-    API->>API: Gói ballot và sig_ballot
-    API->>CR: Chuyển dữ liệu phiếu rõ để mã hóa
-    CR->>CR: Tạo DEK và IV, AES-GCM mã hóa phiếu
+    participant CR as Hàm mã hóa trong backend
+    API->>API: Gói ballot và sig_ballot thành phiếu rõ
+    API->>CR: Gửi phiếu rõ
+    CR->>CR: Tạo DEK AES và IV mới
+    CR->>CR: AES-GCM tạo ciphertext và tag
     CR->>CR: RSA-OAEP bọc DEK bằng public key hệ thống
     CR-->>API: ciphertext, wrapped_dek, iv, tag
 ```
 
-**Em trình bày:** “Em đọc sơ đồ từ trên xuống. Backend nhận phiếu SV001 chọn B, kiểm thời gian bỏ phiếu, tài khoản, ứng viên và hai chữ ký. Nếu bước nào sai thì dừng và báo lỗi. Nếu hợp lệ, backend khóa dòng trạng thái để kiểm SV001 chưa bầu, rồi ghi nonce; nonce cũ sẽ bị database từ chối. Tiếp theo backend gói `ballot` với `sig_ballot` thành dữ liệu phiếu rõ. Phần mã hóa trong chính backend tạo khóa AES mới là DEK và IV mới cho phiếu này. AES-GCM biến phiếu rõ thành `ciphertext` và `tag`; RSA-OAEP dùng public key của hệ thống bọc DEK thành `wrapped_dek`. Bốn giá trị `ciphertext`, `wrapped_dek`, `iv`, `tag` được chuyển sang bước lưu phiếu ở sơ đồ sau. DEK gốc không được lưu vào database.”
+**Em trình bày sơ đồ mã hóa:** “SV001 chọn ứng viên B và đã ký phiếu. Sau khi kiểm chữ ký, backend gói `ballot` là nội dung chọn B với `sig_ballot` là chữ ký của nội dung đó. Phần mã hóa trong backend tạo riêng cho phiếu này một khóa AES 32 byte gọi là DEK và một IV 12 byte. AES-256-GCM dùng chúng để tạo `ciphertext` là phiếu đã mã hóa và `tag` để phát hiện dữ liệu bị sửa. Sau đó RSA-OAEP dùng public key của hệ thống bọc DEK thành `wrapped_dek`. Backend nhận bốn giá trị `ciphertext`, `wrapped_dek`, `iv`, `tag` để lưu vào bảng `votes`. DEK gốc không được lưu.”
 
-**Chống bỏ phiếu lặp:** “Khóa dòng `voter_status` bằng `FOR UPDATE` khiến hai yêu cầu của SV001 gửi cùng lúc không thể cùng thành công. Nonce chặn **gửi lại cùng yêu cầu cũ**; `has_voted` chặn **SV001 dùng nonce mới để bầu lần hai**.”
+**Sơ đồ 2 — Giải mã phiếu khi kiểm phiếu:**
 
-**Em nói rõ:** “KMS ở bài này là module quản lý khóa mô phỏng trong backend, lưu cặp RSA trong thư mục cấu hình. Nó không phải dịch vụ KMS độc lập và **không tạo cặp khóa mới cho mỗi phiếu**. Mỗi phiếu chỉ có **DEK AES mới**. Nếu làm mất private key KMS cũ thì không mở được DEK của các phiếu cũ.”
+```mermaid
+sequenceDiagram
+    participant DB as PostgreSQL
+    participant API as Backend kiểm phiếu
+    participant CR as Hàm giải mã trong backend
+    API->>DB: Đọc bốn trường của phiếu trong votes
+    DB-->>API: ciphertext, wrapped_dek, iv, tag
+    API->>CR: Gửi bốn trường để giải mã
+    CR->>CR: RSA-OAEP dùng private key mở DEK
+    CR->>CR: AES-GCM kiểm tag và giải mã bằng DEK, IV
+    CR-->>API: Phiếu rõ chứa ballot và sig_ballot
+```
 
-**Em trình bày:** “Backend gói `ballot` và `sig_ballot` thành dữ liệu phiếu. Nó tạo một **khóa AES mới 32 byte cho riêng phiếu này**, gọi là DEK, và một IV ngẫu nhiên 12 byte. AES-256-GCM dùng DEK và IV biến phiếu rõ thành `ciphertext`, tức dữ liệu không đọc trực tiếp được. Thuật toán còn tạo `tag` 16 byte để khi giải mã có thể phát hiện dữ liệu bị sửa hoặc dùng sai khóa. Nhưng nếu lưu DEK gốc cạnh phiếu thì người đọc database có thể mở phiếu. Vì vậy public key của KMS mô phỏng dùng RSA-OAEP bọc DEK thành `wrapped_dek`. Database chỉ lưu khóa đã bọc.”
+**Em trình bày sơ đồ giải mã:** “Việc này chỉ diễn ra khi kiểm phiếu sau giờ kết thúc. Backend đọc bốn trường đã lưu trong `votes`. Private key của hệ thống mở `wrapped_dek` để lấy lại đúng DEK của phiếu này. AES-GCM dùng DEK, IV, `ciphertext` và `tag` để kiểm dữ liệu rồi giải mã. Nếu tag không khớp, hệ thống báo lỗi thay vì đếm một phiếu sai. Nếu hợp lệ, backend lấy lại `ballot`, thấy `candidate_id=2` và cộng một phiếu cho B. Phiếu rõ chỉ được xử lý trong bộ nhớ; admin chỉ nhận tổng số phiếu ở mục 8.”
+
+**Em nói rõ về KMS:** “Cặp khóa RSA dùng để bọc và mở DEK thuộc module KMS mô phỏng trong backend. Đây không phải dịch vụ đứng riêng. Cặp khóa này được dùng lại, còn mỗi phiếu có DEK AES mới. Nếu mất private key KMS cũ thì không thể mở các phiếu cũ.”
 
 | Cột trong `votes` | Có tác dụng gì?                                                              |
 | ----------------- | ---------------------------------------------------------------------------- |
@@ -136,14 +146,17 @@ sequenceDiagram
 
 ## 7. Database ghi phiếu trong một transaction
 
-**Sơ đồ mã hóa, ghi phiếu và trả biên nhận:**
+**Sơ đồ ghi phiếu và trả biên nhận:**
 
 ```mermaid
 sequenceDiagram
     participant WEB as Trình duyệt SV001
     participant API as Backend
     participant DB as PostgreSQL
-    Note over API,DB: Tiếp tục transaction trên, nonce đã được ghi
+    Note over API,DB: Transaction bắt đầu trước khi kiểm tra yêu cầu
+    API->>DB: Khóa voter_status, kiểm chưa bầu
+    API->>DB: Ghi nonce vào used_nonces
+    Note over API: Mã hóa phiếu như sơ đồ 1 ở mục 6
     API->>DB: Ghi bốn trường mã hóa vào votes
     API->>DB: Ghi trạng thái đã bầu vào voter_status
     alt Thành công
@@ -155,13 +168,13 @@ sequenceDiagram
     end
 ```
 
-**Em trình bày:** “Ba thay đổi này phải thành công cùng nhau. `used_nonces` chặn dùng lại nonce. `votes` chứa phiếu mã hóa và **không có cột `voter_id` hoặc `candidate_id` riêng**. `voter_status` ghi SV001 đã bỏ phiếu và lưu chữ ký `sig_cast`. Backend tính `receipt_hash` là SHA-256 của bytes chữ ký `sig_cast`, lưu hash đó rồi trả bản hex làm biên nhận **sau commit**. `receipt_hash` có thể tính lại từ `sig_cast`; hệ thống hiện chưa có trang tra cứu biên nhận và nó chưa chứng minh phiếu đã được tính vào kết quả cuối cùng.”
+**Em trình bày:** “Backend khóa dòng `voter_status` để hai yêu cầu của SV001 gửi cùng lúc không thể cùng thành công. `used_nonces` chặn gửi lại yêu cầu cũ; `has_voted` chặn SV001 bầu lần hai dù dùng nonce mới. Sau khi mã hóa như mục 6, ba thay đổi phải thành công cùng nhau: ghi nonce, ghi phiếu mã hóa vào `votes`, và ghi trạng thái đã bầu vào `voter_status`. Bảng `votes` **không có cột `voter_id` hoặc `candidate_id` riêng**. Backend lưu chữ ký `sig_cast` và `receipt_hash` là SHA-256 của chữ ký đó, rồi trả bản hex làm biên nhận **sau commit**. Nếu một bước lỗi, tất cả thay đổi được rollback. Biên nhận hiện chưa có trang tra cứu và chưa chứng minh phiếu đã được tính vào kết quả cuối cùng.”
 
 **Code:** [vote.py](../app/voting/vote.py), [voting_service.py](../app/voting/voting_service.py), [init.sql](../db/init.sql).
 
 ## 8. Hết giờ bầu cử: admin kiểm phiếu
 
-**Sơ đồ giải mã — đi ngược sơ đồ mã hóa:**
+**Sơ đồ admin xem kết quả:**
 
 ```mermaid
 sequenceDiagram
@@ -174,13 +187,13 @@ sequenceDiagram
     else Đã hết giờ bầu cử
         API->>DB: Đọc phiếu mã hóa
         loop Với mỗi phiếu
-            API->>API: Mở DEK, giải mã và cộng phiếu
+            API->>API: Giải mã như mục 6, cộng theo ứng viên
         end
         API-->>AD: Chỉ trả tổng theo ứng viên
     end
 ```
 
-**Em trình bày:** “Admin đăng nhập bằng `/admin/login`. Trước giờ kết thúc, `/results` từ chối và chưa đọc phiếu. Sau giờ kết thúc, backend dùng tài khoản database `tally_user` đọc `votes` và `candidates`. Với từng phiếu, private key KMS mở `wrapped_dek` để lấy lại DEK. AES-GCM dùng DEK cùng IV, ciphertext và tag để giải mã. Nếu tag hoặc dữ liệu sai, lượt kiểm phiếu báo lỗi chứ không trả một tổng sai. Với phiếu ví dụ, backend đọc `candidate_id=2` và cộng một cho B. API chỉ trả **tổng phiếu**, không trả từng phiếu đã giải mã cho admin.”
+**Em trình bày:** “Admin đăng nhập bằng `/admin/login`. Trước giờ kết thúc, `/results` từ chối và chưa đọc phiếu. Sau giờ kết thúc, backend dùng tài khoản database `tally_user` đọc `votes` và `candidates`. Với từng phiếu, backend giải mã như sơ đồ 2 ở mục 6, đọc `candidate_id` rồi cộng cho đúng ứng viên. Nếu phiếu không giải mã được, lượt kiểm phiếu báo lỗi chứ không trả một tổng sai. API chỉ trả **tổng phiếu**, không trả từng phiếu đã giải mã cho admin.”
 
 **Giới hạn riêng tư:** “Tách `votes` và `voter_status` tránh liên kết trực tiếp tên cử tri với phiếu, nhưng **không đảm bảo ẩn danh tuyệt đối**. Backend đã thấy B trước khi mã hóa và KMS mô phỏng nằm cùng backend.”
 
