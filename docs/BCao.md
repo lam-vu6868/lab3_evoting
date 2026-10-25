@@ -1,4 +1,4 @@
-﻿# Bài thuyết trình: Hệ thống bầu cử điện tử bản demo
+﻿# Bài thuyết trình: Hệ thống bầu cử điện tử
 
 **Cách dùng:** Mở file ở chế độ xem trước Markdown có hỗ trợ Mermaid để thấy các ô và mũi tên của `sequenceDiagram`, rồi đọc lần lượt các đoạn **Em trình bày**. Không cần đọc từng ký hiệu trên sơ đồ. Toàn bài theo một ví dụ giả: cử tri `SV001` chọn ứng viên B (`candidate_id = 2`). Không đưa mã kích hoạt, mật khẩu, JWT hay khóa riêng thật lên màn hình lớp.
 
@@ -20,7 +20,7 @@ sequenceDiagram
     HT-->>AD: Trả tổng phiếu theo ứng viên
 ```
 
-**Em trình bày:** “Đây là sơ đồ tổng quan của bản demo; em xin đọc từ trên xuống. Đầu tiên, cử tri SV001 kích hoạt tài khoản và đăng nhập. Tiếp theo, SV001 chọn ứng viên B rồi gửi phiếu. Hệ thống kiểm tra và lưu phiếu dưới dạng đã mã hóa trong database. Sau khi cuộc bầu cử kết thúc, admin yêu cầu xem kết quả; hệ thống đọc các phiếu để đếm và chỉ trả tổng theo ứng viên. Ở các sơ đồ sau, em sẽ giải thích từng bước này diễn ra như thế nào.”
+**Em trình bày:** “Đây là sơ đồ tổng quan của hệ thống; em xin đọc từ trên xuống. Đầu tiên, cử tri SV001 kích hoạt tài khoản và đăng nhập. Tiếp theo, SV001 chọn ứng viên B rồi gửi phiếu. Hệ thống kiểm tra và lưu phiếu dưới dạng đã mã hóa trong database. Sau khi cuộc bầu cử kết thúc, admin yêu cầu xem kết quả; hệ thống đọc các phiếu để đếm và chỉ trả tổng theo ứng viên. Ở các sơ đồ sau, em sẽ giải thích từng bước này diễn ra như thế nào.”
 
 ## 2. Công nghệ và nhiệm vụ của từng phần
 
@@ -231,7 +231,7 @@ sequenceDiagram
 | `iv`              | 12 byte dùng cho đúng lần mã hóa này; cần lại để giải mã, không phải bí mật. |
 | `tag`             | 16 byte dùng kiểm dữ liệu hoặc khóa có sai/bị sửa không.                     |
 
-**Em giải thích ba thuật toán:** “**RSA-PSS** dùng cặp khóa của **cử tri** để ký và kiểm chữ ký. **AES-256-GCM** dùng DEK để mã hóa nội dung phiếu. **RSA-OAEP** dùng cặp khóa của **KMS** để bảo vệ DEK. Hai cặp RSA khác nhau: private key cử tri ở trình duyệt, private key KMS ở backend. Backend **thấy lựa chọn B trước khi mã hóa**; đây là giới hạn của bản demo.”
+**Em giải thích ba thuật toán:** “**RSA-PSS** dùng cặp khóa của **cử tri** để ký và kiểm chữ ký. **AES-256-GCM** dùng DEK để mã hóa nội dung phiếu. **RSA-OAEP** dùng cặp khóa của **KMS** để bảo vệ DEK. Hai cặp RSA khác nhau: private key cử tri ở trình duyệt, private key KMS ở backend. Backend **thấy lựa chọn B trước khi mã hóa**; đây là giới hạn của hệ thống hiện tại.”
 
 **Code:** [crypto_service.py](../app/crypto/crypto_service.py), [kms.py](../app/crypto/kms.py), [voting_service.py](../app/voting/voting_service.py).
 
@@ -259,7 +259,7 @@ sequenceDiagram
     end
 ```
 
-**Em trình bày:** “Ba thay đổi này phải thành công cùng nhau. `used_nonces` chặn dùng lại nonce. `votes` chứa phiếu mã hóa và **không có cột `voter_id` hoặc `candidate_id` riêng**. `voter_status` ghi SV001 đã bỏ phiếu và lưu chữ ký `sig_cast`. Backend tính `receipt_hash` là SHA-256 của bytes chữ ký `sig_cast`, lưu hash đó rồi trả bản hex làm biên nhận **sau commit**. `receipt_hash` có thể tính lại từ `sig_cast`; bản demo chưa có trang tra cứu biên nhận và nó chưa chứng minh phiếu đã được tính vào kết quả cuối cùng.”
+**Em trình bày:** “Ba thay đổi này phải thành công cùng nhau. `used_nonces` chặn dùng lại nonce. `votes` chứa phiếu mã hóa và **không có cột `voter_id` hoặc `candidate_id` riêng**. `voter_status` ghi SV001 đã bỏ phiếu và lưu chữ ký `sig_cast`. Backend tính `receipt_hash` là SHA-256 của bytes chữ ký `sig_cast`, lưu hash đó rồi trả bản hex làm biên nhận **sau commit**. `receipt_hash` có thể tính lại từ `sig_cast`; hệ thống hiện chưa có trang tra cứu biên nhận và nó chưa chứng minh phiếu đã được tính vào kết quả cuối cùng.”
 
 **Sơ đồ dữ liệu được đọc hoặc ghi ở năm bảng:**
 
@@ -316,7 +316,7 @@ sequenceDiagram
 
 **Code:** [admin.py](../app/auth/admin.py), [results.py](../app/voting/results.py), [tally.py](../app/voting/tally.py).
 
-## 9. Kiểm tra và giới hạn của bản demo
+## 9. Kiểm tra và giới hạn của hệ thống
 
 **Em trình bày:** “Theo các checkpoint trong [ROADMAP.md](../ROADMAP.md), dự án đã thử với **dữ liệu giả và database thử nghiệm riêng**: mã kích hoạt sai; hai yêu cầu kích hoạt đồng thời; mật khẩu và JWT sai; chữ ký sai; nonce lặp; hai yêu cầu bỏ phiếu đồng thời chỉ một thành công; lỗi giữa transaction phải rollback; chặn xem kết quả trước giờ; và một luồng từ kích hoạt đến kết quả trong trình duyệt. Đây là kết quả của những trường hợp đã thử, không phải chứng nhận an toàn để bầu cử thật.”
 
@@ -324,7 +324,7 @@ sequenceDiagram
 
 ## 10. Kết luận để đọc trước lớp
 
-**Em trình bày:** “Tóm lại, cử tri dùng **RSA-PSS** để ký, backend dùng **AES-256-GCM** để mã hóa phiếu và **RSA-OAEP của KMS** để bọc khóa AES. PostgreSQL dùng transaction và khóa dòng để phiếu hoặc được ghi đủ hoặc không ghi gì, đồng thời chặn bỏ phiếu hai lần. Sau khi kết thúc, backend giải mã trong RAM và chỉ trả tổng theo ứng viên. Mỗi lớp có một nhiệm vụ: chữ ký xác nhận nội dung, mã hóa bảo vệ phiếu lưu trữ, database lưu trạng thái và quyền. Hệ thống đáp ứng mục tiêu của bản demo học tập, **chưa phải hệ thống bầu cử dùng thật**.”
+**Em trình bày:** “Tóm lại, cử tri dùng **RSA-PSS** để ký, backend dùng **AES-256-GCM** để mã hóa phiếu và **RSA-OAEP của KMS** để bọc khóa AES. PostgreSQL dùng transaction và khóa dòng để phiếu hoặc được ghi đủ hoặc không ghi gì, đồng thời chặn bỏ phiếu hai lần. Sau khi kết thúc, backend giải mã trong RAM và chỉ trả tổng theo ứng viên. Mỗi lớp có một nhiệm vụ: chữ ký xác nhận nội dung, mã hóa bảo vệ phiếu lưu trữ, database lưu trạng thái và quyền. Hệ thống đáp ứng mục tiêu học tập, **chưa phải hệ thống bầu cử dùng thật**.”
 
 ## Phần dự phòng: trả lời câu hỏi thường gặp
 
@@ -338,4 +338,4 @@ sequenceDiagram
 - **KMS là gì?** Trong bài này là module quản lý khóa mô phỏng của backend. `tally_user` là role DB đọc phiếu để kiểm.
 - **Vì sao không nói ẩn danh tuyệt đối?** Backend thấy lựa chọn trước mã hóa; dữ liệu sau giải mã và thông tin khác có thể tạo liên kết gián tiếp.
 
-**Tài liệu tra thêm:** [Sodoluong/README.md](../Sodoluong/README.md), [STRUCTURE.md](STRUCTURE.md), [technical.md](technical.md), [risk-analysis.md](risk-analysis.md). Khi demo trước lớp, chỉ dùng dữ liệu giả; kiểm tra giờ bầu cử và DB thử nghiệm trước, không xóa dữ liệu hoặc tạo lại khóa KMS đang dùng.
+**Tài liệu tra thêm:** [Sodoluong/README.md](../Sodoluong/README.md), [STRUCTURE.md](STRUCTURE.md), [technical.md](technical.md), [risk-analysis.md](risk-analysis.md). Khi trình bày trực tiếp trước lớp, chỉ dùng dữ liệu giả; kiểm tra giờ bầu cử và DB thử nghiệm trước, không xóa dữ liệu hoặc tạo lại khóa KMS đang dùng.
