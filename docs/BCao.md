@@ -46,7 +46,7 @@ sequenceDiagram
     participant WEB as Trình duyệt SV001
     participant API as Backend
     participant DB as PostgreSQL
-    WEB->>WEB: Nhập mã, mật khẩu; tạo và lưu hai khóa
+    WEB->>WEB: Nhập mã và mật khẩu, tạo và lưu hai khóa
     WEB->>API: Gửi mã, mật khẩu, chỉ public key
     API->>DB: Kiểm mã, lưu public key và mật khẩu đã hash
     API-->>WEB: Kích hoạt thành công
@@ -86,7 +86,7 @@ sequenceDiagram
     API->>API: Kiểm JWT và thời gian
     API->>DB: Đọc public key SV001 và ứng viên B
     API->>API: Kiểm hai chữ ký
-    Note over API: Sai thì từ chối; đúng thì tiếp tục ghi phiếu
+    Note over API: Sai thì từ chối, đúng thì tiếp tục ghi phiếu
 ```
 
 **Em trình bày:** “Khi SV001 chọn B và bấm gửi, browser tạo `ballot`, nghĩa là nội dung lựa chọn ứng viên 2. Browser còn tạo `cast`, nghĩa là SV001 xác nhận **hành động gửi phiếu cho cuộc bầu cử này**. `nonce` là mã ngẫu nhiên chỉ dùng một lần; `ts` là thời gian Unix tính theo giây. Hai nội dung dùng cùng nonce và ts. Browser dùng private key của SV001 và RSA-PSS ký riêng từng nội dung. Backend dùng public key đã lưu để kiểm. Nếu ai sửa lựa chọn B thành A, chữ ký ballot không còn khớp. Nếu ai chỉ lấy được JWT mà không có private key, họ không tạo được hai chữ ký hợp lệ.”
@@ -125,8 +125,8 @@ sequenceDiagram
     participant API as Backend
     participant DB as PostgreSQL
     Note over API,DB: Một transaction cho toàn bộ lần bỏ phiếu
-    API->>DB: Khóa trạng thái; nếu chưa bầu, ghi nonce
-    API->>API: Tạo DEK, IV; AES-GCM mã hóa phiếu
+    API->>DB: Khóa trạng thái và ghi nonce nếu chưa bầu
+    API->>API: Tạo DEK và IV, AES-GCM mã hóa phiếu
     API->>API: RSA-OAEP bọc DEK
     API->>DB: Ghi phiếu mã hóa và trạng thái đã bầu
     alt Thành công
