@@ -26,14 +26,14 @@ sequenceDiagram
 
 ## 2. Công nghệ và nhiệm vụ của từng phần
 
-| Phần                    | Công nghệ                                 | Công việc                                                              |
-| ----------------------- | ----------------------------------------- | ---------------------------------------------------------------------- |
-| Giao diện               | HTML, CSS, JavaScript                     | Bốn trang: kích hoạt, đăng nhập, bỏ phiếu, quản trị.                   |
-| Mật mã trên trình duyệt | Web Crypto API                            | Tạo cặp khóa RSA-PSS của cử tri và ký trước khi gửi phiếu.             |
-| Backend                 | Python, FastAPI                           | Nhận API, kiểm JSON, xác thực và thực hiện nghiệp vụ.                  |
-| Database                | PostgreSQL, SQLAlchemy                    | Lưu dữ liệu bầu cử; ngăn một cử tri gửi thành công hai phiếu cùng lúc. |
-| Xác thực                | PBKDF2-HMAC-SHA256 với salt, JWT ký HS256 | Lưu hash mật khẩu, cấp mã đăng nhập có hạn và kiểm role.               |
-| Phiếu và khóa           | RSA-PSS, AES-256-GCM, RSA-OAEP            | Ký phiếu, mã hóa phiếu và bọc khóa AES.                                |
+| Phần                    | Công nghệ                      | Công việc                                                  |
+| ----------------------- | ------------------------------ | ---------------------------------------------------------- |
+| Giao diện               | HTML, CSS, JavaScript          | Bốn trang: kích hoạt, đăng nhập, bỏ phiếu, quản trị.       |
+| Mật mã trên trình duyệt | Web Crypto API                 | Tạo cặp khóa RSA-PSS của cử tri và ký trước khi gửi phiếu. |
+| Backend                 | Python, FastAPI                | Nhận API, kiểm JSON, xác thực và thực hiện nghiệp vụ.      |
+| Database                | PostgreSQL, SQLAlchemy         | Lưu dữ liệu bầu cử                                         |
+| Xác thực                | PBKDF2-HMAC-SHA256 với salt    | Lưu hash mật khẩu, cấp mã đăng nhập có hạn và kiểm role.   |
+| Phiếu và khóa           | RSA-PSS, AES-256-GCM, RSA-OAEP | Ký phiếu, mã hóa phiếu và bọc khóa AES.                    |
 
 **Sơ đồ một phiếu đi qua các thành phần:**
 
